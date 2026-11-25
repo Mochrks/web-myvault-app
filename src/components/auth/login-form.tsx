@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import BlurText from "@/components/ui/BlurText";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/api/client";
 
@@ -45,16 +46,23 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
 
   return (
     <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-      <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          myvault
-        </h1>
+      <div className="flex flex-col items-center space-y-2 text-center">
+        <BlurText
+          text="myvault"
+          animateBy="letters"
+          direction="top"
+          trigger="load"
+          delay={80}
+          blur={10}
+          distance={24}
+          className="justify-center text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
+        />
         <p className="text-sm text-muted-foreground">
           Enter your password to unlock your vault
         </p>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-6 shadow-xs">
+      <div className="rounded-lg border border-border bg-card/90 p-6 shadow-xs backdrop-blur-md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label
@@ -120,10 +128,6 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           </Button>
         </form>
       </div>
-
-      <p className="px-6 text-center text-xs text-muted-foreground">
-        Encrypted-at-rest private storage &middot; HttpOnly signed session
-      </p>
     </div>
   );
 }
