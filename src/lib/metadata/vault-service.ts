@@ -101,7 +101,14 @@ export class VaultService {
     folderId: string,
     input: { name: string }
   ): Promise<{ folder: VaultFolder; metadata: VaultMetadataIndex }> {
-    const trimmedName = input.name.trim();
+    return this.updateFolder(folderId, { name: input.name });
+  }
+
+  async updateFolder(
+    folderId: string,
+    input: { name?: string; isFavorite?: boolean }
+  ): Promise<{ folder: VaultFolder; metadata: VaultMetadataIndex }> {
+    const trimmedName = input.name !== undefined ? input.name.trim() : undefined;
     const now = new Date().toISOString();
     let updatedFolder: VaultFolder | null = null;
 
@@ -111,23 +118,27 @@ export class VaultService {
         throw new VaultAppError("FOLDER_NOT_FOUND", "Folder not found.", 404);
       }
 
-      const duplicate = current.folders.some(
-        (f) =>
-          f.id !== folderId &&
-          f.parentId === target.parentId &&
-          f.name.toLowerCase() === trimmedName.toLowerCase()
-      );
-      if (duplicate) {
-        throw new VaultAppError(
-          "DUPLICATE_FOLDER_NAME",
-          `Folder "${trimmedName}" already exists in this parent.`,
-          409
+      if (trimmedName !== undefined) {
+        const duplicate = current.folders.some(
+          (f) =>
+            f.id !== folderId &&
+            f.parentId === target.parentId &&
+            f.name.toLowerCase() === trimmedName.toLowerCase()
         );
+        if (duplicate) {
+          throw new VaultAppError(
+            "DUPLICATE_FOLDER_NAME",
+            `Folder "${trimmedName}" already exists in this parent.`,
+            409
+          );
+        }
       }
 
       updatedFolder = {
         ...target,
-        name: trimmedName,
+        name: trimmedName ?? target.name,
+        isFavorite:
+          input.isFavorite !== undefined ? input.isFavorite : target.isFavorite,
         updatedAt: now,
       };
 
@@ -650,7 +661,7 @@ export class VaultService {
 
   async updateFile(
     fileId: string,
-    input: { name?: string; content?: string }
+    input: { name?: string; content?: string; isFavorite?: boolean }
   ): Promise<{ file: VaultFile; metadata: VaultMetadataIndex }> {
     const current = await this.getMetadata();
     const existing = current.files.find((f) => f.id === fileId);
@@ -714,6 +725,8 @@ export class VaultService {
         mimeType: nextMime,
         kind: nextKind,
         size: nextSize,
+        isFavorite:
+          input.isFavorite !== undefined ? input.isFavorite : target.isFavorite,
         updatedAt: now,
       };
 

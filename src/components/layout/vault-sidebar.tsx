@@ -13,12 +13,12 @@ import {
   FolderPlus,
   HardDrive,
   LayoutDashboard,
-  Lock,
   LogOut,
   MoreHorizontal,
   NotebookPen,
   Pencil,
-  Search,
+  Star,
+  StickyNote,
   Trash2,
   Upload,
   X,
@@ -57,7 +57,7 @@ interface FolderTreeNodeProps {
   activeFolderId: string | null;
   expandedIds: Set<string>;
   toggleExpanded: (id: string) => void;
-  onAction: (action: "rename" | "copy" | "delete", folder: VaultFolder) => void;
+  onAction: (action: "rename" | "copy" | "delete" | "favorite", folder: VaultFolder) => void;
   onNavigate?: () => void;
 }
 
@@ -84,7 +84,7 @@ function FolderTreeNode({
           "group flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
           isActive
             ? "bg-accent text-accent-foreground font-medium"
-            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
         )}
       >
         <button
@@ -92,7 +92,7 @@ function FolderTreeNode({
           onClick={() => hasChildren && toggleExpanded(folder.id)}
           className={cn(
             "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-transform text-muted-foreground/80 hover:text-foreground",
-            !hasChildren && "invisible",
+            !hasChildren && "invisible"
           )}
           aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
         >
@@ -135,6 +135,12 @@ function FolderTreeNode({
               <NotebookPen className="h-4 w-4" />
               New Note Here
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onAction("favorite", folder)}>
+              <Star
+                className={cn("h-4 w-4", folder.isFavorite && "fill-current text-foreground")}
+              />
+              {folder.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => onAction("rename", folder)}>
               <Pencil className="h-4 w-4" />
@@ -145,10 +151,7 @@ function FolderTreeNode({
               Copy to...
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              destructive
-              onSelect={() => onAction("delete", folder)}
-            >
+            <DropdownMenuItem destructive onSelect={() => onAction("delete", folder)}>
               <Trash2 className="h-4 w-4" />
               Delete
             </DropdownMenuItem>
@@ -188,8 +191,8 @@ export function VaultSidebar({
   const router = useRouter();
   const {
     metadata,
+    setMetadata,
     getBreadcrumb,
-    setActiveSearchOpen,
     openNewFolderDialog,
     openNewNoteDialog,
     openUploadDialog,
@@ -197,17 +200,11 @@ export function VaultSidebar({
 
   const activeFolderId = extractFolderIdFromPath(pathname);
 
-  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(
-    () => new Set(),
-  );
+  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(() => new Set());
   const [loggingOut, setLoggingOut] = React.useState(false);
-  const [renameTarget, setRenameTarget] = React.useState<ActionTarget | null>(
-    null,
-  );
+  const [renameTarget, setRenameTarget] = React.useState<ActionTarget | null>(null);
   const [copyTarget, setCopyTarget] = React.useState<ActionTarget | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<ActionTarget | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = React.useState<ActionTarget | null>(null);
 
   const autoExpandedIds = React.useMemo(() => {
     if (!activeFolderId) return new Set<string>();
@@ -224,9 +221,7 @@ export function VaultSidebar({
 
   const childrenMap = React.useMemo(() => {
     const map = new Map<string | null, VaultFolder[]>();
-    const sorted = [...metadata.folders].sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
+    const sorted = [...metadata.folders].sort((a, b) => a.name.localeCompare(b.name));
     for (const folder of sorted) {
       const list = map.get(folder.parentId) ?? [];
       list.push(folder);
@@ -239,7 +234,7 @@ export function VaultSidebar({
 
   const totalBytes = React.useMemo(
     () => metadata.files.reduce((sum, f) => sum + f.size, 0),
-    [metadata.files],
+    [metadata.files]
   );
 
   const toggleExpanded = (id: string) => {
@@ -251,10 +246,25 @@ export function VaultSidebar({
     });
   };
 
-  const handleFolderAction = (
-    action: "rename" | "copy" | "delete",
-    folder: VaultFolder,
+  const handleFolderAction = async (
+    action: "rename" | "copy" | "delete" | "favorite",
+    folder: VaultFolder
   ) => {
+    if (action === "favorite") {
+      try {
+        const res = await apiRequest<{
+          metadata: typeof metadata;
+        }>(`/api/vault/folders/${folder.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ isFavorite: !folder.isFavorite }),
+        });
+        setMetadata(res.metadata);
+        toast.success(folder.isFavorite ? "Removed from favorites" : "Added to favorites");
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to update favorite.");
+      }
+      return;
+    }
     const target: ActionTarget = { kind: "folder", item: folder };
     if (action === "rename") setRenameTarget(target);
     else if (action === "copy") setCopyTarget(target);
@@ -281,9 +291,8 @@ export function VaultSidebar({
           onClick={onCloseMobile}
           className="flex items-center gap-2 hover:opacity-85 transition-opacity"
         >
-          <span className="text-sm font-semibold tracking-tight text-foreground">
-            myvault
-          </span>
+          <StickyNote className="h-4 w-4 text-foreground" />
+          <span className="text-sm font-semibold tracking-tight text-foreground">myvault</span>
           <span className="rounded border border-border/70 bg-muted/50 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
             private
           </span>
@@ -307,7 +316,7 @@ export function VaultSidebar({
               "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
               pathname === "/dashboard"
                 ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             )}
           >
             <LayoutDashboard className="h-3.5 w-3.5" />
@@ -319,31 +328,28 @@ export function VaultSidebar({
             onClick={onCloseMobile}
             className={cn(
               "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
-              pathname === "/files"
+              pathname === "/files" || pathname.startsWith("/files/")
                 ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             )}
           >
             <Files className="h-3.5 w-3.5" />
             All Files
           </Link>
 
-          <button
-            type="button"
-            onClick={() => {
-              onCloseMobile();
-              setActiveSearchOpen(true);
-            }}
-            className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+          <Link
+            href="/favorites"
+            onClick={onCloseMobile}
+            className={cn(
+              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
+              pathname === "/favorites"
+                ? "bg-accent text-accent-foreground font-medium"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            )}
           >
-            <span className="flex items-center gap-2.5">
-              <Search className="h-3.5 w-3.5" />
-              Search
-            </span>
-            <kbd className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-              Ctrl K
-            </kbd>
-          </button>
+            <Star className="h-3.5 w-3.5" />
+            Favorites
+          </Link>
         </div>
 
         <div className="space-y-1.5">
@@ -410,9 +416,7 @@ export function VaultSidebar({
           </div>
 
           {rootFolders.length === 0 ? (
-            <p className="px-2.5 py-2 text-xs text-muted-foreground">
-              No folders created yet.
-            </p>
+            <p className="px-2.5 py-2 text-xs text-muted-foreground">No folders created yet.</p>
           ) : (
             <div className="space-y-0.5">
               {rootFolders.map((folder) => (
@@ -440,13 +444,10 @@ export function VaultSidebar({
               <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />
               Storage
             </span>
-            <span className="font-mono text-foreground font-medium">
-              {formatBytes(totalBytes)}
-            </span>
+            <span className="font-mono text-foreground font-medium">{formatBytes(totalBytes)}</span>
           </div>
           <div className="mt-1 text-[11px] text-muted-foreground">
-            {metadata.folders.length} folders &middot; {metadata.files.length}{" "}
-            files
+            {metadata.folders.length} folders &middot; {metadata.files.length} files
           </div>
         </div>
 
@@ -467,35 +468,24 @@ export function VaultSidebar({
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r border-border lg:block">
-        {sidebarBody}
-      </aside>
+      <aside className="hidden w-64 shrink-0 border-r border-border lg:block">{sidebarBody}</aside>
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-            onClick={onCloseMobile}
-          />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={onCloseMobile} />
           <aside className="relative z-10 w-72 max-w-[85vw] border-r border-border bg-background">
             {sidebarBody}
           </aside>
         </div>
       )}
 
-      <RenameItemDialog
-        target={renameTarget}
-        onClose={() => setRenameTarget(null)}
-      />
+      <RenameItemDialog target={renameTarget} onClose={() => setRenameTarget(null)} />
       <CopyItemDialog target={copyTarget} onClose={() => setCopyTarget(null)} />
       <DeleteConfirmDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onDeleted={() => {
-          if (
-            deleteTarget?.kind === "folder" &&
-            activeFolderId === deleteTarget.item.id
-          ) {
+          if (deleteTarget?.kind === "folder" && activeFolderId === deleteTarget.item.id) {
             const parent = deleteTarget.item.parentId;
             router.push(parent ? `/files/${parent}` : "/files");
           }

@@ -13,6 +13,7 @@ export interface VaultFolder {
   id: string;
   name: string;
   parentId: string | null;
+  isFavorite?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +27,7 @@ export interface VaultFile {
   extension: string;
   size: number;
   kind: FileKind;
+  isFavorite?: boolean;
   createdAt: string;
   updatedAt: string;
 }

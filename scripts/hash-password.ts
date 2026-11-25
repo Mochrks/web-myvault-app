@@ -1,5 +1,5 @@
 import readline from "node:readline";
-import { hashVaultPassword } from "../lib/auth/password";
+import { hashVaultPassword } from "../src/lib/auth/password";
 
 function promptHidden(question: string): Promise<string> {
   return new Promise((resolve, reject) => {

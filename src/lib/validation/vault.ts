@@ -5,7 +5,9 @@ const INVALID_NAME_CHARS = /[<>:"/\\|?*\x00-\x1f]/;
 /**
  * Validates single folder/file entry names and blocks path traversal or OS-unsafe characters.
  */
-export function validateSafeEntryName(raw: string): { valid: true; name: string } | { valid: false; message: string } {
+export function validateSafeEntryName(
+  raw: string
+): { valid: true; name: string } | { valid: false; message: string } {
   const name = raw.trim();
   if (!name) {
     return { valid: false, message: "Name cannot be empty." };
@@ -19,7 +21,7 @@ export function validateSafeEntryName(raw: string): { valid: true; name: string 
   if (INVALID_NAME_CHARS.test(name)) {
     return {
       valid: false,
-      message: "Name contains forbidden characters (/ \\ : * ? \" < > |).",
+      message: 'Name contains forbidden characters (/ \\ : * ? " < > |).',
     };
   }
   return { valid: true, name };
@@ -51,6 +53,15 @@ export const renameFolderSchema = z.object({
   name: safeEntryNameSchema,
 });
 
+export const updateFolderSchema = z
+  .object({
+    name: safeEntryNameSchema.optional(),
+    isFavorite: z.boolean().optional(),
+  })
+  .refine((v) => v.name !== undefined || v.isFavorite !== undefined, {
+    message: "At least one field (name or isFavorite) must be provided.",
+  });
+
 export const copyFolderSchema = z.object({
   targetParentId: z.string().uuid().nullable().default(null),
   newName: safeEntryNameSchema.optional(),
@@ -59,7 +70,10 @@ export const copyFolderSchema = z.object({
 export const createNoteSchema = z.object({
   name: safeEntryNameSchema,
   folderId: z.string().uuid().nullable().default(null),
-  content: z.string().max(5 * 1024 * 1024, "Note content exceeds 5 MB limit.").default(""),
+  content: z
+    .string()
+    .max(5 * 1024 * 1024, "Note content exceeds 5 MB limit.")
+    .default(""),
 });
 
 export const registerUploadedFileSchema = z.object({
@@ -77,10 +91,14 @@ export const registerUploadedFileSchema = z.object({
 export const updateFileSchema = z
   .object({
     name: safeEntryNameSchema.optional(),
-    content: z.string().max(5 * 1024 * 1024, "Note content exceeds 5 MB limit.").optional(),
+    content: z
+      .string()
+      .max(5 * 1024 * 1024, "Note content exceeds 5 MB limit.")
+      .optional(),
+    isFavorite: z.boolean().optional(),
   })
-  .refine((v) => v.name !== undefined || v.content !== undefined, {
-    message: "At least one field (name or content) must be provided.",
+  .refine((v) => v.name !== undefined || v.content !== undefined || v.isFavorite !== undefined, {
+    message: "At least one field (name, content, or isFavorite) must be provided.",
   });
 
 export const copyFileSchema = z.object({
@@ -99,6 +117,7 @@ export const vaultFolderSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   parentId: z.string().uuid().nullable(),
+  isFavorite: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -122,6 +141,7 @@ export const vaultFileSchema = z.object({
     "archive",
     "other",
   ]),
+  isFavorite: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

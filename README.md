@@ -1,76 +1,70 @@
-# myvault
+<h1 align="center">myvault - Personal Cloud Storage & Notes</h1>
 
-A private, single-user personal vault for notes, code snippets, documents, and binary files — built with **Next.js App Router**, **TypeScript**, **Tailwind CSS**, **Shiki**, and **Vercel Blob (Private)**.
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16.4.6-black" alt="Next.js Version" />
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-4.3.3-blue" alt="Tailwind CSS Version" />
+  <img src="https://img.shields.io/badge/TypeScript-5-blue" alt="TypeScript Version" />
+  <img src="https://img.shields.io/badge/Shadcn%20UI-Neutral-neutral" alt="Shadcn UI Theme" />
+</p>
 
-## Architecture & Security Highlights
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=nextjs,tailwind,ts" alt="Tech Stack Icons" />
+</p>
 
-- **No External Database**: All metadata (`myvault/metadata/vault-index.json`) and file binaries (`myvault/objects/YYYY/<uuid>`) are stored exclusively in **Private Vercel Blob**.
-- **Single-User Argon2id Authentication**: Password verification uses `@node-rs/argon2` (Argon2id) against `VAULT_PASSWORD_HASH`.
-- **Signed HttpOnly Session Cookies**: Sessions (`myvault_session`) are signed with HMAC-SHA256 (`AUTH_SECRET`) using Node.js `crypto` with timing-safe verification.
-- **Best-Effort Rate Limiting**: Login endpoint enforces per-IP attempt limits with lockout and progressive delay.
-- **Safe File Serving**: All previews and downloads are proxied through authenticated Next.js API routes. Active web formats (`.html`, `.svg`) are never inline-rendered as trusted DOM/images.
-- **Optimistic Concurrency**: Metadata writes use ETag-based `ifMatch` checks with automatic retry and pre-mutation backup snapshots.
+## About
 
-## Local Development Setup
+A **private personal cloud storage and notes web application** powered by **Next.js**. Features a minimalist, distraction-free UI built with **Tailwind CSS** and **Shadcn UI** components, offering a clean and responsive experience for organizing personal files, folders, and markdown notes.
 
-### 1. Install Dependencies
+## Features
 
-```bash
-npm install
-```
+- Minimalist and responsive interface built with **Tailwind CSS** and **Shadcn UI**
+- Hierarchical folder explorer with tree navigation, grid/list views, and favorites
+- Built-in markdown note editor and syntax-highlighted code viewer
+- Private object storage integration with authenticated session handling
+- Fast server-side rendering and API routes powered by **Next.js**
 
-### 2. Generate Password Hash & Auth Secret
+## Tech Stack
 
-Run the interactive password hash generator:
+- **Next.js 16** for full-stack React development
+- **Tailwind CSS** for styling and responsive design
+- **TypeScript** for type safety across client and server
+- **Shadcn UI** for accessible, minimalist UI components
 
-```bash
-npm run vault:hash-password
-```
+## Setup & Installation
 
-Generate a strong `AUTH_SECRET` (minimum 32 characters):
+---
 
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
-```
+### Front-end & Server (Next.js)
 
-### 3. Configure Environment Variables
+- **Clone the repository**
 
-Copy `.env.example` to `.env.local` and fill in your values:
+    ```bash
+    git clone https://github.com/Mochrks/myvault
+    cd myvault
+    ```
 
-```env
-BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
-VAULT_PASSWORD_HASH=$argon2id$v=19$m=19456,t=2,p=1$...
-AUTH_SECRET=your-random-secret-at-least-32-characters
-SESSION_MAX_AGE_SECONDS=604800
-MAX_UPLOAD_SIZE_MB=100
-```
+- **Install dependencies**
 
-> **Note:** `BLOB_READ_WRITE_TOKEN` must point to a **Private** Vercel Blob store.
+    ```bash
+    npm install
+    ```
 
-### 4. Run Locally
+- **Configure environment variables**
 
-```bash
-npm run dev
-```
+    Create a `.env.local` file with your authentication and storage configuration.
 
-Open [http://localhost:3000](http://localhost:3000) and sign in with your configured vault password.
+- **Run the development server**
 
-## Verification Commands
+    ```bash
+    npm run dev
+    ```
 
-```bash
-npm run typecheck
-npm run lint
-npm test
-npm run build
-```
+- The application will be running on [http://localhost:3000](http://localhost:3000).
 
-## Vercel Deployment Checklist
-
-1. Create a **Private** Vercel Blob store in your Vercel project (**Storage → Blob → Private**).
-2. Add the environment variables in Vercel Project Settings:
-   - `BLOB_READ_WRITE_TOKEN` (automatically added when linking Blob store)
-   - `VAULT_PASSWORD_HASH`
-   - `AUTH_SECRET`
-   - `SESSION_MAX_AGE_SECONDS` (optional, default `604800`)
-   - `MAX_UPLOAD_SIZE_MB` (optional, default `100`)
-3. Deploy via `vercel --prod` or Git integration.
+## Connect with me:
+[![GitHub](https://img.shields.io/badge/GitHub-333?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Mochrks)
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtube.com/@Mochrks)
+[![Instagram](https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://instagram.com/Mochrks)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/Mochrks)
+[![Behance](https://img.shields.io/badge/Behance-1769FF?style=for-the-badge&logo=behance&logoColor=white)](https://behance.net/Mochrks)
+[![Dribbble](https://img.shields.io/badge/Dribbble-EA4C89?style=for-the-badge&logo=dribbble&logoColor=white)](https://dribbble.com/Mochrks)

@@ -40,7 +40,8 @@ export function VaultTopbar({ onOpenMobile }: { onOpenMobile: () => void }) {
   const breadcrumb = isFilesRoute ? getBreadcrumb(currentFolderId) : [];
 
   let pageLabel = "Dashboard";
-  if (pathname.startsWith("/notes/")) pageLabel = "Note Editor";
+  if (pathname === "/favorites") pageLabel = "Favorites";
+  else if (pathname.startsWith("/notes/")) pageLabel = "Note Editor";
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-sm">
