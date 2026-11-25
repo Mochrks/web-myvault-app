@@ -4,16 +4,13 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowRight,
   FileText,
   Folder,
   FolderPlus,
   HardDrive,
   NotebookPen,
-  Search,
   Upload,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VaultEntryIcon } from "@/components/vault/file-icon";
 import { useVault } from "@/components/vault/vault-provider";
@@ -24,7 +21,6 @@ export function DashboardClient() {
   const {
     metadata,
     getFolderPathLabel,
-    setActiveSearchOpen,
     openNewFolderDialog,
     openNewNoteDialog,
     openUploadDialog,
@@ -59,18 +55,18 @@ export function DashboardClient() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 p-4 sm:p-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Personal Vault
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+            Dashboard
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Private, encrypted-at-rest storage for your notes, code, and files.
+          <p className="text-sm text-muted-foreground">
+            Overview of your personal vault and recent activity.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -95,76 +91,78 @@ export function DashboardClient() {
             onClick={() => openUploadDialog(null)}
           >
             <Upload className="h-4 w-4" />
-            Upload Files
+            Upload
           </Button>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card/50 p-5">
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Total Folders</span>
-            <Folder className="h-4 w-4 text-amber-400" />
+        <div className="rounded-lg border border-border bg-card p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Total Folders
+            </span>
+            <Folder className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-semibold text-foreground">
+          <div className="text-2xl font-bold tracking-tight text-foreground">
             {metadata.folders.length}
           </div>
-          <Link
-            href="/files"
-            className="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            Browse directories
-            <ArrowRight className="h-3 w-3" />
-          </Link>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Organized in directory hierarchy
+          </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card/50 p-5">
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Total Files</span>
-            <FileText className="h-4 w-4 text-sky-400" />
+        <div className="rounded-lg border border-border bg-card p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Total Files
+            </span>
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-semibold text-foreground">
+          <div className="text-2xl font-bold tracking-tight text-foreground">
             {metadata.files.length}
           </div>
-          <button
-            type="button"
-            onClick={() => setActiveSearchOpen(true)}
-            className="mt-3 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            <Search className="h-3 w-3" />
-            Quick search (Ctrl+K)
-          </button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Notes, code, and documents
+          </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card/50 p-5">
-          <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-            <span>Storage Used</span>
-            <HardDrive className="h-4 w-4 text-emerald-400" />
+        <div className="rounded-lg border border-border bg-card p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              Storage Used
+            </span>
+            <HardDrive className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 text-2xl font-semibold font-mono text-foreground">
+          <div className="text-2xl font-bold font-mono tracking-tight text-foreground">
             {formatBytes(totalBytes)}
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             Private Vercel Blob storage
           </p>
         </div>
       </div>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Recent Files
-          </h2>
+      <div className="rounded-lg border border-border bg-card shadow-xs">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              Recent Files
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Files and notes recently updated in your vault
+            </p>
+          </div>
           <Link
             href="/files"
-            className="text-xs text-primary hover:underline"
+            className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors"
           >
-            View all files
+            View all
           </Link>
         </div>
 
         {recentFiles.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-card/30 px-6 py-12 text-center">
+          <div className="px-6 py-12 text-center">
             <p className="text-sm font-medium text-foreground">
               Your vault is empty
             </p>
@@ -173,16 +171,20 @@ export function DashboardClient() {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border/60 rounded-xl border border-border bg-card/40">
+          <div className="divide-y divide-border">
             {recentFiles.map((file) => (
               <button
                 key={file.id}
                 type="button"
                 onClick={() => openFile(file.id)}
-                className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left transition-colors hover:bg-muted/30"
+                className="flex w-full items-center justify-between gap-4 px-5 py-3 text-left transition-colors hover:bg-muted/40 cursor-pointer"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <VaultEntryIcon type="file" kind={file.kind} className="h-4 w-4 shrink-0" />
+                  <VaultEntryIcon
+                    type="file"
+                    kind={file.kind}
+                    className="h-4 w-4 shrink-0 text-muted-foreground"
+                  />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium text-foreground">
                       {file.name}
@@ -194,19 +196,21 @@ export function DashboardClient() {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-                  <Badge variant="secondary" className="hidden sm:inline-flex font-mono text-[11px]">
+                  <span className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] sm:inline">
                     {file.extension ? `.${file.extension}` : file.kind}
-                  </Badge>
+                  </span>
                   <span className="hidden font-mono md:inline">
                     {formatBytes(file.size)}
                   </span>
-                  <span suppressHydrationWarning>{formatRelativeDate(file.updatedAt)}</span>
+                  <span suppressHydrationWarning>
+                    {formatRelativeDate(file.updatedAt)}
+                  </span>
                 </div>
               </button>
             ))}
           </div>
         )}
-      </section>
+      </div>
     </div>
   );
 }

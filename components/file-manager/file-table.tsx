@@ -370,7 +370,7 @@ export function FileTable({ folderId }: { folderId: string | null }) {
       </div>
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-card/30 px-6 py-16 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card/50 px-6 py-16 text-center">
           <p className="text-sm font-medium text-foreground">
             {filterQuery || filterKind !== "all"
               ? "No matching items"
@@ -413,10 +413,10 @@ export function FileTable({ folderId }: { folderId: string | null }) {
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-border bg-card/40">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-muted/40 text-xs text-muted-foreground">
+              <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
                 <tr>
                   <th className="w-10 px-3 py-2.5">
                     <Checkbox

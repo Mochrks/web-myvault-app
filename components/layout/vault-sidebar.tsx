@@ -78,22 +78,21 @@ function FolderTreeNode({
   const isActive = activeFolderId === folder.id;
 
   return (
-    <div>
+    <div className="select-none">
       <div
         className={cn(
-          "group flex items-center gap-1 rounded-md px-1.5 py-1 text-sm transition-colors",
+          "group flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
           isActive
-            ? "bg-primary/15 text-foreground font-medium"
-            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            ? "bg-accent text-accent-foreground font-medium"
+            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
         )}
-        style={{ paddingLeft: `${depth * 12 + 6}px` }}
       >
         <button
           type="button"
           onClick={() => hasChildren && toggleExpanded(folder.id)}
           className={cn(
-            "flex h-5 w-5 shrink-0 items-center justify-center rounded hover:bg-muted",
-            !hasChildren && "invisible"
+            "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-transform text-muted-foreground/80 hover:text-foreground",
+            !hasChildren && "invisible",
           )}
           aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
         >
@@ -110,9 +109,9 @@ function FolderTreeNode({
           className="flex min-w-0 flex-1 items-center gap-2 py-0.5"
         >
           {isActive || isExpanded ? (
-            <FolderOpen className="h-4 w-4 shrink-0 text-amber-400" />
+            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-foreground/80" />
           ) : (
-            <Folder className="h-4 w-4 shrink-0 text-amber-400/80" />
+            <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           )}
           <span className="truncate">{folder.name}</span>
         </Link>
@@ -121,10 +120,10 @@ function FolderTreeNode({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 data-[state=open]:opacity-100"
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 data-[state=open]:opacity-100 text-muted-foreground hover:text-foreground"
               aria-label={`Folder actions for ${folder.name}`}
             >
-              <MoreHorizontal className="h-3.5 w-3.5" />
+              <MoreHorizontal className="h-3 w-3" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
@@ -158,7 +157,7 @@ function FolderTreeNode({
       </div>
 
       {hasChildren && isExpanded && (
-        <div className="mt-0.5 space-y-0.5">
+        <div className="ml-3 pl-2 border-l border-border/50 space-y-0.5 mt-0.5">
           {childFolders.map((child) => (
             <FolderTreeNode
               key={child.id}
@@ -198,11 +197,17 @@ export function VaultSidebar({
 
   const activeFolderId = extractFolderIdFromPath(pathname);
 
-  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(() => new Set());
+  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
   const [loggingOut, setLoggingOut] = React.useState(false);
-  const [renameTarget, setRenameTarget] = React.useState<ActionTarget | null>(null);
+  const [renameTarget, setRenameTarget] = React.useState<ActionTarget | null>(
+    null,
+  );
   const [copyTarget, setCopyTarget] = React.useState<ActionTarget | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<ActionTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<ActionTarget | null>(
+    null,
+  );
 
   const autoExpandedIds = React.useMemo(() => {
     if (!activeFolderId) return new Set<string>();
@@ -220,7 +225,7 @@ export function VaultSidebar({
   const childrenMap = React.useMemo(() => {
     const map = new Map<string | null, VaultFolder[]>();
     const sorted = [...metadata.folders].sort((a, b) =>
-      a.name.localeCompare(b.name)
+      a.name.localeCompare(b.name),
     );
     for (const folder of sorted) {
       const list = map.get(folder.parentId) ?? [];
@@ -234,7 +239,7 @@ export function VaultSidebar({
 
   const totalBytes = React.useMemo(
     () => metadata.files.reduce((sum, f) => sum + f.size, 0),
-    [metadata.files]
+    [metadata.files],
   );
 
   const toggleExpanded = (id: string) => {
@@ -248,7 +253,7 @@ export function VaultSidebar({
 
   const handleFolderAction = (
     action: "rename" | "copy" | "delete",
-    folder: VaultFolder
+    folder: VaultFolder,
   ) => {
     const target: ActionTarget = { kind: "folder", item: folder };
     if (action === "rename") setRenameTarget(target);
@@ -274,17 +279,14 @@ export function VaultSidebar({
         <Link
           href="/dashboard"
           onClick={onCloseMobile}
-          className="flex items-center gap-2.5"
+          className="flex items-center gap-2 hover:opacity-85 transition-opacity"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 text-primary ring-1 ring-primary/30">
-            <Lock className="h-4 w-4" />
-          </div>
-          <div className="leading-tight">
-            <div className="text-sm font-semibold tracking-tight text-foreground">
-              myvault
-            </div>
-            <div className="text-[11px] text-muted-foreground">Private Vault</div>
-          </div>
+          <span className="text-sm font-semibold tracking-tight text-foreground">
+            myvault
+          </span>
+          <span className="rounded border border-border/70 bg-muted/50 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+            private
+          </span>
         </Link>
         <button
           type="button"
@@ -302,13 +304,13 @@ export function VaultSidebar({
             href="/dashboard"
             onClick={onCloseMobile}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
               pathname === "/dashboard"
-                ? "bg-primary/15 text-foreground font-medium"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                ? "bg-accent text-accent-foreground font-medium"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
             )}
           >
-            <LayoutDashboard className="h-4 w-4" />
+            <LayoutDashboard className="h-3.5 w-3.5" />
             Dashboard
           </Link>
 
@@ -316,13 +318,13 @@ export function VaultSidebar({
             href="/files"
             onClick={onCloseMobile}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
               pathname === "/files"
-                ? "bg-primary/15 text-foreground font-medium"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                ? "bg-accent text-accent-foreground font-medium"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
             )}
           >
-            <Files className="h-4 w-4" />
+            <Files className="h-3.5 w-3.5" />
             All Files
           </Link>
 
@@ -332,74 +334,74 @@ export function VaultSidebar({
               onCloseMobile();
               setActiveSearchOpen(true);
             }}
-            className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
           >
             <span className="flex items-center gap-2.5">
-              <Search className="h-4 w-4" />
+              <Search className="h-3.5 w-3.5" />
               Search
             </span>
-            <kbd className="rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+            <kbd className="rounded border border-border bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
               Ctrl K
             </kbd>
           </button>
         </div>
 
         <div className="space-y-1.5">
-          <div className="px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="px-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
             Quick Actions
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-3 gap-1">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 flex-col gap-0.5 px-1 text-[11px]"
+              className="h-8 px-1.5 text-xs font-normal gap-1 hover:bg-accent"
               onClick={() => {
                 onCloseMobile();
                 openNewFolderDialog(activeFolderId);
               }}
             >
-              <FolderPlus className="h-3.5 w-3.5" />
-              Folder
+              <FolderPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span>Folder</span>
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 flex-col gap-0.5 px-1 text-[11px]"
+              className="h-8 px-1.5 text-xs font-normal gap-1 hover:bg-accent"
               onClick={() => {
                 onCloseMobile();
                 openNewNoteDialog(activeFolderId);
               }}
             >
-              <NotebookPen className="h-3.5 w-3.5" />
-              Note
+              <NotebookPen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span>Note</span>
             </Button>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 flex-col gap-0.5 px-1 text-[11px]"
+              className="h-8 px-1.5 text-xs font-normal gap-1 hover:bg-accent"
               onClick={() => {
                 onCloseMobile();
                 openUploadDialog(activeFolderId);
               }}
             >
-              <Upload className="h-3.5 w-3.5" />
-              Upload
+              <Upload className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span>Upload</span>
             </Button>
           </div>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between px-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              My Files
+            <span className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              Explorer
             </span>
             <button
               type="button"
               onClick={() => openNewFolderDialog(null)}
-              className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
               title="New root folder"
               aria-label="New root folder"
             >
@@ -409,7 +411,7 @@ export function VaultSidebar({
 
           {rootFolders.length === 0 ? (
             <p className="px-2.5 py-2 text-xs text-muted-foreground">
-              No folders yet.
+              No folders created yet.
             </p>
           ) : (
             <div className="space-y-0.5">
@@ -431,19 +433,20 @@ export function VaultSidebar({
         </div>
       </div>
 
-      <div className="border-t border-border p-3 space-y-3">
-        <div className="rounded-lg border border-border/70 bg-background/60 px-3 py-2 text-xs">
+      <div className="border-t border-border p-3 space-y-2">
+        <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
           <div className="flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <HardDrive className="h-3.5 w-3.5" />
-              Vault Storage
+            <span className="flex items-center gap-1.5 text-xs font-medium">
+              <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />
+              Storage
             </span>
-            <span className="font-mono text-foreground">
+            <span className="font-mono text-foreground font-medium">
               {formatBytes(totalBytes)}
             </span>
           </div>
           <div className="mt-1 text-[11px] text-muted-foreground">
-            {metadata.folders.length} folders · {metadata.files.length} files
+            {metadata.folders.length} folders &middot; {metadata.files.length}{" "}
+            files
           </div>
         </div>
 
@@ -451,11 +454,11 @@ export function VaultSidebar({
           type="button"
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
+          className="h-8 w-full justify-start text-xs text-muted-foreground hover:text-foreground"
           onClick={handleLogout}
           disabled={loggingOut}
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-3.5 w-3.5" />
           {loggingOut ? "Locking vault..." : "Lock & Sign Out"}
         </Button>
       </div>
@@ -484,10 +487,7 @@ export function VaultSidebar({
         target={renameTarget}
         onClose={() => setRenameTarget(null)}
       />
-      <CopyItemDialog
-        target={copyTarget}
-        onClose={() => setCopyTarget(null)}
-      />
+      <CopyItemDialog target={copyTarget} onClose={() => setCopyTarget(null)} />
       <DeleteConfirmDialog
         target={deleteTarget}
         onClose={() => setDeleteTarget(null)}
