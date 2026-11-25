@@ -48,6 +48,10 @@ export interface BlobStorageAdapter {
   deletePrivateObjects(pathnames: string[]): Promise<void>;
 }
 
+export function isBlobStorageConfigured(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+}
+
 function assertBlobConfigured(): string {
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (!token) {

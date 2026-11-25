@@ -8,6 +8,7 @@ import type { VaultFile, VaultFolder, VaultMetadataIndex } from "@/types/vault";
 interface VaultContextValue {
   metadata: VaultMetadataIndex;
   maxUploadSizeMb: number;
+  storageConfigured: boolean;
   isRefreshing: boolean;
   setMetadata: React.Dispatch<React.SetStateAction<VaultMetadataIndex>>;
   refreshMetadata: () => Promise<void>;
@@ -33,10 +34,12 @@ const VaultContext = React.createContext<VaultContextValue | null>(null);
 export function VaultProvider({
   initialMetadata,
   maxUploadSizeMb,
+  storageConfigured = true,
   children,
 }: {
   initialMetadata: VaultMetadataIndex;
   maxUploadSizeMb: number;
+  storageConfigured?: boolean;
   children: React.ReactNode;
 }) {
   const [metadata, setMetadata] = React.useState<VaultMetadataIndex>(initialMetadata);
@@ -54,6 +57,7 @@ export function VaultProvider({
   const [previewFile, setPreviewFile] = React.useState<VaultFile | null>(null);
 
   const refreshMetadata = React.useCallback(async () => {
+    if (!storageConfigured) return;
     setIsRefreshing(true);
     try {
       const res = await apiRequest<{ metadata: VaultMetadataIndex }>(
@@ -67,7 +71,7 @@ export function VaultProvider({
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [storageConfigured]);
 
   const folderMap = React.useMemo(
     () => new Map(metadata.folders.map((f) => [f.id, f])),
@@ -114,6 +118,7 @@ export function VaultProvider({
   const value: VaultContextValue = {
     metadata,
     maxUploadSizeMb,
+    storageConfigured,
     isRefreshing,
     setMetadata,
     refreshMetadata,
