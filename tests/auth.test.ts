@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { hashVaultPassword, verifyVaultPassword } from "@/lib/auth/password";
+import {
+  hashVaultPassword,
+  normalizePasswordHash,
+  verifyVaultPassword,
+} from "@/lib/auth/password";
 import {
   checkLoginRateLimit,
   recordLoginFailure,
@@ -16,6 +20,14 @@ describe("auth password hashing", () => {
     await expect(verifyVaultPassword(hash, "BANDUNG@1933")).resolves.toBe(true);
     await expect(verifyVaultPassword(hash, "wrong-password")).resolves.toBe(false);
     await expect(verifyVaultPassword(hash, "")).resolves.toBe(false);
+
+    // Verify tolerance for backslash escapes and quotes from .env copying
+    const escaped = hash.replace(/\$/g, "\\$");
+    const quoted = `"${escaped}"`;
+    expect(normalizePasswordHash(escaped)).toBe(hash);
+    expect(normalizePasswordHash(quoted)).toBe(hash);
+    await expect(verifyVaultPassword(escaped, "BANDUNG@1933")).resolves.toBe(true);
+    await expect(verifyVaultPassword(quoted, "BANDUNG@1933")).resolves.toBe(true);
   });
 });
 

@@ -9,6 +9,22 @@ const ARGON2_OPTIONS = {
   outputLen: 32,
 };
 
+export function normalizePasswordHash(raw: string): string {
+  let cleaned = raw.trim();
+  // Strip surrounding quotes if copied from shell or .env quotes
+  if (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  // Strip backslash escapes if copied from .env.local (\$ -> $)
+  if (cleaned.includes("\\$")) {
+    cleaned = cleaned.replace(/\\(\$)/g, "$1");
+  }
+  return cleaned;
+}
+
 export async function hashVaultPassword(password: string): Promise<string> {
   return hash(password, ARGON2_OPTIONS);
 }
@@ -19,7 +35,8 @@ export async function verifyVaultPassword(
 ): Promise<boolean> {
   if (!storedHash || !candidatePassword) return false;
   try {
-    return await verify(storedHash, candidatePassword);
+    const normalized = normalizePasswordHash(storedHash);
+    return await verify(normalized, candidatePassword);
   } catch {
     return false;
   }
