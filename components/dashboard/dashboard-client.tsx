@@ -200,7 +200,7 @@ export function DashboardClient() {
                   <span className="hidden font-mono md:inline">
                     {formatBytes(file.size)}
                   </span>
-                  <span>{formatRelativeDate(file.updatedAt)}</span>
+                  <span suppressHydrationWarning>{formatRelativeDate(file.updatedAt)}</span>
                 </div>
               </button>
             ))}

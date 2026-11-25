@@ -513,7 +513,10 @@ export function FileTable({ folderId }: { folderId: string | null }) {
                       <td className="hidden px-3 py-2.5 font-mono text-xs text-muted-foreground md:table-cell">
                         {row.entryType === "folder" ? "—" : formatBytes(row.size)}
                       </td>
-                      <td className="hidden px-3 py-2.5 text-xs text-muted-foreground lg:table-cell">
+                      <td
+                        suppressHydrationWarning
+                        className="hidden px-3 py-2.5 text-xs text-muted-foreground lg:table-cell"
+                      >
                         {formatRelativeDate(row.updatedAt)}
                       </td>
                       <td className="px-3 py-2.5 text-right">

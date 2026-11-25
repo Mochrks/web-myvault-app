@@ -27,9 +27,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full bg-[#0b0d12] font-sans text-[#eef1f7] selection:bg-indigo-500/30 selection:text-indigo-100">
+      <body
+        suppressHydrationWarning
+        className="min-h-full bg-[#0b0d12] font-sans text-[#eef1f7] selection:bg-indigo-500/30 selection:text-indigo-100"
+      >
         {children}
         <Toaster
           theme="dark"
