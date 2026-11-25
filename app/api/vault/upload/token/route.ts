@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/response";
 import { getServerSession } from "@/lib/auth/session";
 import { VaultService } from "@/lib/metadata/vault-service";
-import { getMaxUploadSizeBytes } from "@/lib/storage/blob-storage";
+import {
+  getMaxUploadSizeBytes,
+  isBlobStorageConfigured,
+} from "@/lib/storage/blob-storage";
 import { prepareUploadSchema } from "@/lib/validation/vault";
 
 export const runtime = "nodejs";
@@ -12,14 +15,14 @@ const OBJECT_KEY_REGEX =
   /^myvault\/objects\/\d{4}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (!token) {
+  if (!isBlobStorageConfigured()) {
     return apiError(
       "STORAGE_NOT_CONFIGURED",
-      "Vercel Blob storage token (BLOB_READ_WRITE_TOKEN) is not configured.",
+      "Vercel Blob storage credentials are not configured.",
       503
     );
   }
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
 
   let body: HandleUploadBody;
   try {
@@ -39,7 +42,7 @@ export async function POST(request: Request) {
     const jsonResponse = await handleUpload({
       body,
       request,
-      token,
+      ...(token ? { token } : {}),
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const session = await getServerSession();
         if (!session) {

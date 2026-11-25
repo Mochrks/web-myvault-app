@@ -49,19 +49,32 @@ export interface BlobStorageAdapter {
 }
 
 export function isBlobStorageConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+  if (process.env.BLOB_READ_WRITE_TOKEN?.trim()) return true;
+  const storeId = process.env.BLOB_STORE_ID?.trim();
+  const hasOidc = Boolean(
+    process.env.VERCEL_OIDC_TOKEN?.trim() || process.env.VERCEL
+  );
+  return Boolean(storeId && hasOidc);
 }
 
-function assertBlobConfigured(): string {
+function getBlobAuthOptions(): { token?: string } {
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (!token) {
-    throw new VaultAppError(
-      "STORAGE_NOT_CONFIGURED",
-      "Vercel Blob storage token (BLOB_READ_WRITE_TOKEN) is not configured.",
-      503
-    );
+  if (token) return { token };
+
+  const storeId = process.env.BLOB_STORE_ID?.trim();
+  const hasOidc = Boolean(
+    process.env.VERCEL_OIDC_TOKEN?.trim() || process.env.VERCEL
+  );
+  if (storeId && hasOidc) {
+    // @vercel/blob SDK automatically reads VERCEL_OIDC_TOKEN + BLOB_STORE_ID
+    return {};
   }
-  return token;
+
+  throw new VaultAppError(
+    "STORAGE_NOT_CONFIGURED",
+    "Vercel Blob credentials are not configured. Set BLOB_READ_WRITE_TOKEN, or connect your Vercel Blob store (BLOB_STORE_ID + Vercel OIDC).",
+    503
+  );
 }
 
 async function streamToUtf8(stream: ReadableStream<Uint8Array>): Promise<string> {
@@ -78,12 +91,12 @@ async function streamToUtf8(stream: ReadableStream<Uint8Array>): Promise<string>
 export function createVercelBlobAdapter(): BlobStorageAdapter {
   return {
     async readJsonWithEtag(pathname: string) {
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
         const result = await get(pathname, {
           access: "private",
           useCache: false,
-          token,
+          ...auth,
         });
         if (!result || result.statusCode !== 200 || !result.stream) {
           return null;
@@ -106,7 +119,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
     },
 
     async writeJson(pathname, content, options) {
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
         const result = await put(pathname, content, {
           access: "private",
@@ -115,7 +128,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           allowOverwrite: options?.allowOverwrite ?? true,
           addRandomSuffix: false,
           ...(options?.ifMatch ? { ifMatch: options.ifMatch } : {}),
-          token,
+          ...auth,
         });
         return {
           etag: result.etag,
@@ -146,7 +159,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
     },
 
     async putPrivateObject(pathname, body, contentType, options) {
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
         const payload = typeof body === "string" ? body : Buffer.from(body);
         const result = await put(pathname, payload, {
@@ -155,7 +168,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           cacheControlMaxAge: 60,
           allowOverwrite: options?.allowOverwrite ?? false,
           addRandomSuffix: false,
-          token,
+          ...auth,
         });
         return {
           pathname: result.pathname,
@@ -171,12 +184,12 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
     },
 
     async getPrivateObjectStream(pathname: string) {
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
         const result = await get(pathname, {
           access: "private",
           useCache: false,
-          token,
+          ...auth,
         });
         if (!result || result.statusCode !== 200 || !result.stream) {
           throw new VaultAppError(
@@ -210,9 +223,9 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
     },
 
     async headPrivateObject(pathname: string) {
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
-        const info = await head(pathname, { token });
+        const info = await head(pathname, auth);
         return {
           pathname: info.pathname,
           size: info.size,
@@ -237,14 +250,14 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
     },
 
     async copyPrivateObject(fromPathname, toPathname, contentType) {
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
         const result = await copy(fromPathname, toPathname, {
           access: "private",
           allowOverwrite: false,
           addRandomSuffix: false,
           ...(contentType ? { contentType } : {}),
-          token,
+          ...auth,
         });
         return {
           pathname: result.pathname,
@@ -268,9 +281,9 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
 
     async deletePrivateObjects(pathnames: string[]) {
       if (pathnames.length === 0) return;
-      const token = assertBlobConfigured();
+      const auth = getBlobAuthOptions();
       try {
-        await del(pathnames, { token });
+        await del(pathnames, auth);
       } catch (err) {
         if (err instanceof BlobNotFoundError) {
           return;
