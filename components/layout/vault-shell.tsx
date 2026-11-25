@@ -11,7 +11,14 @@ import { useVault } from "@/components/vault/vault-provider";
 export function VaultShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [warningDismissed, setWarningDismissed] = React.useState(false);
-  const { previewFile, setPreviewFile, storageConfigured } = useVault();
+  const {
+    previewFile,
+    setPreviewFile,
+    storageConfigured,
+    storageError,
+    refreshMetadata,
+    isRefreshing,
+  } = useVault();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -23,28 +30,46 @@ export function VaultShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <VaultTopbar onOpenMobile={() => setMobileOpen(true)} />
         <main className="flex-1 overflow-y-auto">
-          {!storageConfigured && !warningDismissed && (
+          {(!storageConfigured || storageError) && !warningDismissed && (
             <div
               role="alert"
               className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200 sm:mx-6"
             >
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   <p className="font-semibold text-amber-100">
-                    Vercel Blob storage is not configured
+                    {!storageConfigured
+                      ? "Vercel Blob storage is not configured"
+                      : "Could not sync vault metadata from storage"}
                   </p>
                   <p className="text-amber-200/80">
-                    <code className="rounded bg-amber-500/20 px-1 py-0.5 font-mono text-[11px]">
-                      BLOB_READ_WRITE_TOKEN
-                    </code>{" "}
-                    is not set. You can explore the UI, but creating folders,
-                    saving notes, and uploading files require a Private Vercel
-                    Blob token in{" "}
-                    <code className="rounded bg-amber-500/20 px-1 py-0.5 font-mono text-[11px]">
-                      .env.local
-                    </code>{" "}
-                    or your Vercel project settings.
+                    {!storageConfigured ? (
+                      <>
+                        <code className="rounded bg-amber-500/20 px-1 py-0.5 font-mono text-[11px]">
+                          BLOB_READ_WRITE_TOKEN
+                        </code>{" "}
+                        is not set. You can explore the UI, but creating
+                        folders, saving notes, and uploading files require a
+                        Private Vercel Blob token in{" "}
+                        <code className="rounded bg-amber-500/20 px-1 py-0.5 font-mono text-[11px]">
+                          .env.local
+                        </code>{" "}
+                        or your Vercel project settings.
+                      </>
+                    ) : (
+                      <>
+                        {storageError}{" "}
+                        <button
+                          type="button"
+                          onClick={() => refreshMetadata()}
+                          disabled={isRefreshing}
+                          className="ml-1 underline hover:text-amber-100 disabled:opacity-50"
+                        >
+                          {isRefreshing ? "Retrying..." : "Retry now"}
+                        </button>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

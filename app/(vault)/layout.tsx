@@ -31,6 +31,7 @@ export default async function VaultLayout({
 
   let metadata: VaultMetadataIndex = EMPTY_METADATA;
   let storageConfigured = isBlobStorageConfigured();
+  let storageError: string | null = null;
 
   if (storageConfigured) {
     try {
@@ -40,7 +41,10 @@ export default async function VaultLayout({
       if (err instanceof VaultAppError && err.code === "STORAGE_NOT_CONFIGURED") {
         storageConfigured = false;
       } else {
-        throw err;
+        storageError =
+          err instanceof Error
+            ? err.message
+            : "Failed to read metadata from private object storage.";
       }
     }
   }
@@ -52,6 +56,7 @@ export default async function VaultLayout({
       initialMetadata={metadata}
       maxUploadSizeMb={maxUploadSizeMb}
       storageConfigured={storageConfigured}
+      initialStorageError={storageError}
     >
       <VaultShell>{children}</VaultShell>
     </VaultProvider>

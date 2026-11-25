@@ -9,6 +9,7 @@ interface VaultContextValue {
   metadata: VaultMetadataIndex;
   maxUploadSizeMb: number;
   storageConfigured: boolean;
+  storageError: string | null;
   isRefreshing: boolean;
   setMetadata: React.Dispatch<React.SetStateAction<VaultMetadataIndex>>;
   refreshMetadata: () => Promise<void>;
@@ -35,14 +36,19 @@ export function VaultProvider({
   initialMetadata,
   maxUploadSizeMb,
   storageConfigured = true,
+  initialStorageError = null,
   children,
 }: {
   initialMetadata: VaultMetadataIndex;
   maxUploadSizeMb: number;
   storageConfigured?: boolean;
+  initialStorageError?: string | null;
   children: React.ReactNode;
 }) {
   const [metadata, setMetadata] = React.useState<VaultMetadataIndex>(initialMetadata);
+  const [storageError, setStorageError] = React.useState<string | null>(
+    initialStorageError
+  );
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [activeSearchOpen, setActiveSearchOpen] = React.useState(false);
   const [newFolderParentId, setNewFolderParentId] = React.useState<
@@ -64,10 +70,12 @@ export function VaultProvider({
         "/api/vault/metadata"
       );
       setMetadata(res.metadata);
+      setStorageError(null);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to refresh vault metadata."
-      );
+      const msg =
+        err instanceof Error ? err.message : "Failed to refresh vault metadata.";
+      setStorageError(msg);
+      toast.error(msg);
     } finally {
       setIsRefreshing(false);
     }
@@ -119,6 +127,7 @@ export function VaultProvider({
     metadata,
     maxUploadSizeMb,
     storageConfigured,
+    storageError,
     isRefreshing,
     setMetadata,
     refreshMetadata,

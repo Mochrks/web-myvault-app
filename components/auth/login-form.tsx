@@ -13,6 +13,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
+  const [redirecting, setRedirecting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,6 +31,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         body: JSON.stringify({ password }),
       });
       setPassword("");
+      setRedirecting(true);
       toast.success("Vault unlocked");
       router.replace(nextPath.startsWith("/") ? nextPath : "/dashboard");
       router.refresh();
@@ -37,7 +39,6 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       setErrorMessage(
         err instanceof Error ? err.message : "Authentication failed."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -102,8 +103,13 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? (
+        <Button type="submit" className="w-full" disabled={loading || redirecting}>
+          {redirecting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Opening Vault...
+            </>
+          ) : loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Verifying...
