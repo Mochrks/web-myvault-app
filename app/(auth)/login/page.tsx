@@ -14,7 +14,7 @@ export default async function LoginPage(props: {
   const nextPath = searchParams.next || "/dashboard";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0b0d12] px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
       <LoginForm nextPath={nextPath} />
     </main>
   );

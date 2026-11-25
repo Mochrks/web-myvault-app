@@ -37,23 +37,23 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       router.refresh();
     } catch (err) {
       setErrorMessage(
-        err instanceof Error ? err.message : "Authentication failed."
+        err instanceof Error ? err.message : "Authentication failed.",
       );
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-[#232838] bg-[#11141c] p-6 shadow-2xl">
+    <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-sm">
       <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-500/30 bg-indigo-500/15 text-indigo-400">
-          <Lock className="h-5 w-5" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-muted text-foreground">
+          <Lock className="h-4 w-4" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold tracking-tight text-[#eef1f7]">
+          <h1 className="text-base font-semibold tracking-tight text-foreground">
             myvault
           </h1>
-          <p className="text-xs text-[#98a2b3]">
+          <p className="text-xs text-muted-foreground">
             Private personal file &amp; notes vault
           </p>
         </div>
@@ -63,7 +63,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         <div className="space-y-1.5">
           <label
             htmlFor="vault-password"
-            className="block text-xs font-medium text-[#98a2b3]"
+            className="block text-xs font-medium text-muted-foreground"
           >
             Vault Password
           </label>
@@ -83,7 +83,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-[#6b7489] hover:text-[#eef1f7]"
+              className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
             >
               {showPassword ? (
                 <EyeOff className="h-4 w-4" />
@@ -97,13 +97,17 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         {errorMessage && (
           <div
             role="alert"
-            className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300"
+            className="rounded-md border border-destructive/50 bg-destructive/15 px-3 py-2 text-xs text-red-300"
           >
             {errorMessage}
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={loading || redirecting}>
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={loading || redirecting}
+        >
           {redirecting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -120,8 +124,8 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
         </Button>
       </form>
 
-      <div className="mt-5 flex items-center gap-2 border-t border-[#1e2331] pt-4 text-[11px] text-[#6b7489]">
-        <ShieldCheck className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+      <div className="mt-5 flex items-center gap-2 border-t border-border pt-4 text-[11px] text-muted-foreground">
+        <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
         <span>Single-user private storage · HttpOnly signed session</span>
       </div>
     </div>

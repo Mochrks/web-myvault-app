@@ -32,7 +32,7 @@ export default function RootLayout({
     >
       <body
         suppressHydrationWarning
-        className="min-h-full bg-[#0b0d12] font-sans text-[#eef1f7] selection:bg-indigo-500/30 selection:text-indigo-100"
+        className="min-h-full bg-background font-sans text-foreground selection:bg-secondary selection:text-foreground"
       >
         {children}
         <Toaster
@@ -40,7 +40,7 @@ export default function RootLayout({
           position="bottom-right"
           richColors
           toastOptions={{
-            className: "border border-[#232838] bg-[#121620] text-[#eef1f7]",
+            className: "border border-border bg-card text-foreground",
           }}
         />
       </body>

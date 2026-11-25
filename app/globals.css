@@ -1,40 +1,62 @@
 @import "tailwindcss";
 
 :root {
-  --bg-canvas: #0b0d12;
-  --bg-surface: #11141c;
-  --bg-elevated: #171b26;
-  --bg-hover: #1d2230;
-  --border-subtle: #232838;
-  --border-strong: #2f364b;
-  --text-primary: #eef1f7;
-  --text-secondary: #98a2b3;
-  --text-muted: #6b7489;
-  --accent: #6366f1;
-  --accent-hover: #5457e5;
-  --accent-soft: rgba(99, 102, 241, 0.14);
-  --danger: #ef4444;
-  --success: #22c55e;
-  --warning: #f59e0b;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #09090b;
+  --card-foreground: #fafafa;
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #18181b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: #7f1d1d;
+  --destructive-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #d4d4d8;
+  --radius: 0.5rem;
 }
 
 @theme inline {
-  --color-background: var(--bg-canvas);
-  --color-foreground: var(--text-primary);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 html,
 body {
-  background-color: var(--bg-canvas);
-  color: var(--text-primary);
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
-/* Custom subtle scrollbars */
 * {
+  border-color: var(--border);
   scrollbar-width: thin;
-  scrollbar-color: #2a3042 transparent;
+  scrollbar-color: #27272a transparent;
 }
 
 /* Shiki code blocks */
@@ -42,7 +64,8 @@ body {
   margin: 0;
   padding: 1rem 1.25rem;
   background: transparent !important;
-  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.84rem;
   line-height: 1.65;
   overflow-x: auto;

@@ -9,7 +9,9 @@ import type { VaultMetadataIndex } from "@/types/vault";
 export const METADATA_INDEX_PATH = "myvault/metadata/vault-index.json";
 export const METADATA_BACKUP_PATH = "myvault/metadata/vault-index.backup.json";
 
-export function createEmptyMetadataIndex(now: Date = new Date()): VaultMetadataIndex {
+export function createEmptyMetadataIndex(
+  now: Date = new Date(),
+): VaultMetadataIndex {
   return {
     schemaVersion: 1,
     revision: 1,
@@ -29,14 +31,14 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
         throw new VaultAppError(
           "CIRCULAR_HIERARCHY",
           `Folder "${folder.name}" cannot be its own parent.`,
-          400
+          400,
         );
       }
       if (!folderMap.has(folder.parentId)) {
         throw new VaultAppError(
           "ORPHAN_FOLDER",
           `Parent folder for "${folder.name}" does not exist.`,
-          400
+          400,
         );
       }
 
@@ -48,7 +50,7 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
           throw new VaultAppError(
             "CIRCULAR_HIERARCHY",
             "Circular folder hierarchy detected.",
-            400
+            400,
           );
         }
         visited.add(cursor);
@@ -61,7 +63,7 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
       throw new VaultAppError(
         "DUPLICATE_FOLDER_NAME",
         `A folder named "${folder.name}" already exists in this location.`,
-        409
+        409,
       );
     }
     folderSiblings.add(siblingKey);
@@ -74,7 +76,7 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
       throw new VaultAppError(
         "ORPHAN_FILE",
         `Target folder for file "${file.name}" does not exist.`,
-        400
+        400,
       );
     }
     const siblingKey = `${file.folderId ?? "root"}::${file.name.toLowerCase()}`;
@@ -82,7 +84,7 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
       throw new VaultAppError(
         "DUPLICATE_FILE_NAME",
         `A file named "${file.name}" already exists in this folder.`,
-        409
+        409,
       );
     }
     fileSiblings.add(siblingKey);
@@ -91,7 +93,7 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
       throw new VaultAppError(
         "DUPLICATE_OBJECT_KEY",
         `Duplicate storage object key detected for "${file.name}".`,
-        500
+        500,
       );
     }
     objectKeys.add(file.objectKey);
@@ -100,7 +102,7 @@ export function validateMetadataInvariants(index: VaultMetadataIndex): void {
 
 export class MetadataRepository {
   constructor(
-    private readonly storage: BlobStorageAdapter = getBlobStorageAdapter()
+    private readonly storage: BlobStorageAdapter = getBlobStorageAdapter(),
   ) {}
 
   private parseAndValidate(rawJson: string): VaultMetadataIndex {
@@ -111,7 +113,7 @@ export class MetadataRepository {
       throw new VaultAppError(
         "METADATA_CORRUPT",
         "Vault metadata JSON is corrupted and cannot be parsed.",
-        500
+        500,
       );
     }
 
@@ -120,7 +122,7 @@ export class MetadataRepository {
       throw new VaultAppError(
         "METADATA_CORRUPT",
         "Vault metadata schema validation failed.",
-        500
+        500,
       );
     }
 
@@ -128,7 +130,10 @@ export class MetadataRepository {
     return validated.data;
   }
 
-  async readOrInitialize(): Promise<{ index: VaultMetadataIndex; etag: string }> {
+  async readOrInitialize(): Promise<{
+    index: VaultMetadataIndex;
+    etag: string;
+  }> {
     const existing = await this.storage.readJsonWithEtag(METADATA_INDEX_PATH);
     if (existing) {
       return {
@@ -142,12 +147,13 @@ export class MetadataRepository {
       const written = await this.storage.writeJson(
         METADATA_INDEX_PATH,
         JSON.stringify(initial, null, 2),
-        { allowOverwrite: false }
+        { allowOverwrite: false },
       );
       return { index: initial, etag: written.etag };
     } catch (err) {
       if (err instanceof VaultAppError && err.code === "METADATA_CONFLICT") {
-        const retryRead = await this.storage.readJsonWithEtag(METADATA_INDEX_PATH);
+        const retryRead =
+          await this.storage.readJsonWithEtag(METADATA_INDEX_PATH);
         if (retryRead) {
           return {
             index: this.parseAndValidate(retryRead.text),
@@ -161,47 +167,64 @@ export class MetadataRepository {
 
   async mutate(
     mutator: (current: VaultMetadataIndex) => VaultMetadataIndex,
-    options?: { backupBeforeWrite?: boolean }
+    options?: { backupBeforeWrite?: boolean },
   ): Promise<VaultMetadataIndex> {
-    const { index: current, etag } = await this.readOrInitialize();
+    const maxAttempts = 3;
 
-    const cloned = structuredClone(current);
-    const candidate = mutator(cloned);
-    const next: VaultMetadataIndex = {
-      ...candidate,
-      schemaVersion: 1,
-      revision: current.revision + 1,
-      updatedAt: new Date().toISOString(),
-    };
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const { index: current, etag } = await this.readOrInitialize();
 
-    const validated = vaultMetadataIndexSchema.safeParse(next);
-    if (!validated.success) {
-      throw new VaultAppError(
-        "VALIDATION_ERROR",
-        validated.error.issues[0]?.message ?? "Invalid metadata mutation.",
-        400
-      );
-    }
-    validateMetadataInvariants(validated.data);
+      const cloned = structuredClone(current);
+      const candidate = mutator(cloned);
+      const next: VaultMetadataIndex = {
+        ...candidate,
+        schemaVersion: 1,
+        revision: current.revision + 1,
+        updatedAt: new Date().toISOString(),
+      };
 
-    if (options?.backupBeforeWrite) {
+      const validated = vaultMetadataIndexSchema.safeParse(next);
+      if (!validated.success) {
+        throw new VaultAppError(
+          "VALIDATION_ERROR",
+          validated.error.issues[0]?.message ?? "Invalid metadata mutation.",
+          400,
+        );
+      }
+      validateMetadataInvariants(validated.data);
+
+      if (options?.backupBeforeWrite) {
+        try {
+          await this.storage.writeJson(
+            METADATA_BACKUP_PATH,
+            JSON.stringify(current, null, 2),
+            { allowOverwrite: true },
+          );
+        } catch {
+          // Backup write is best-effort; do not block primary mutation if backup fails.
+        }
+      }
+
       try {
         await this.storage.writeJson(
-          METADATA_BACKUP_PATH,
-          JSON.stringify(current, null, 2),
-          { allowOverwrite: true }
+          METADATA_INDEX_PATH,
+          JSON.stringify(validated.data, null, 2),
+          { ifMatch: etag, allowOverwrite: true },
         );
-      } catch {
-        // Backup write is best-effort; do not block primary mutation if backup fails.
+        return validated.data;
+      } catch (err) {
+        const isConflict =
+          err instanceof VaultAppError && err.code === "METADATA_CONFLICT";
+        if (!isConflict || attempt === maxAttempts) {
+          throw err;
+        }
       }
     }
 
-    await this.storage.writeJson(
-      METADATA_INDEX_PATH,
-      JSON.stringify(validated.data, null, 2),
-      { ifMatch: etag, allowOverwrite: true }
+    throw new VaultAppError(
+      "METADATA_CONFLICT",
+      "Vault metadata was updated by another request. Please refresh and try again.",
+      409,
     );
-
-    return validated.data;
   }
 }
