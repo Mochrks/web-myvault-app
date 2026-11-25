@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   const [showPassword, setShowPassword] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [redirecting, setRedirecting] = React.useState(false);
+  const [titleReady, setTitleReady] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,14 +57,35 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           delay={80}
           blur={10}
           distance={24}
+          onAnimationComplete={() => setTitleReady(true)}
           className="justify-center text-4xl font-bold tracking-tight text-foreground sm:text-5xl"
         />
-        <p className="text-sm text-muted-foreground">
-          Enter your password to unlock your vault
-        </p>
+        <BlurText
+          text="Enter your password to unlock your vault"
+          animateBy="words"
+          direction="top"
+          trigger="load"
+          delay={60}
+          blur={8}
+          distance={14}
+          className="justify-center text-sm text-muted-foreground"
+        />
       </div>
 
-      <div className="rounded-lg border border-border bg-card/90 p-6 shadow-xs backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+        animate={
+          titleReady
+            ? { opacity: 1, y: 0, filter: "blur(0px)" }
+            : { opacity: 0, y: 12, filter: "blur(6px)" }
+        }
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+        className={
+          titleReady
+            ? "rounded-lg border border-border bg-card/90 p-6 shadow-xs backdrop-blur-md"
+            : "pointer-events-none rounded-lg border border-border bg-card/90 p-6 shadow-xs backdrop-blur-md"
+        }
+      >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <label
@@ -127,7 +150,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
             )}
           </Button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
