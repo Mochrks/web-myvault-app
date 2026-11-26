@@ -21,7 +21,8 @@ interface VaultContextValue {
   openNewFolderDialog: (parentId: string | null) => void;
   closeNewFolderDialog: () => void;
   newNoteFolderId: string | null | undefined;
-  openNewNoteDialog: (folderId: string | null) => void;
+  newNoteDefaultFormat: "md" | "txt";
+  openNewNoteDialog: (folderId: string | null, defaultFormat?: "md" | "txt") => void;
   closeNewNoteDialog: () => void;
   uploadTargetFolderId: string | null | undefined;
   openUploadDialog: (folderId: string | null) => void;
@@ -57,6 +58,9 @@ export function VaultProvider({
   const [newNoteFolderId, setNewNoteFolderId] = React.useState<
     string | null | undefined
   >(undefined);
+  const [newNoteDefaultFormat, setNewNoteDefaultFormat] = React.useState<
+    "md" | "txt"
+  >("md");
   const [uploadTargetFolderId, setUploadTargetFolderId] = React.useState<
     string | null | undefined
   >(undefined);
@@ -139,7 +143,11 @@ export function VaultProvider({
     openNewFolderDialog: (parentId) => setNewFolderParentId(parentId),
     closeNewFolderDialog: () => setNewFolderParentId(undefined),
     newNoteFolderId,
-    openNewNoteDialog: (folderId) => setNewNoteFolderId(folderId),
+    newNoteDefaultFormat,
+    openNewNoteDialog: (folderId, defaultFormat = "md") => {
+      setNewNoteDefaultFormat(defaultFormat);
+      setNewNoteFolderId(folderId);
+    },
     closeNewNoteDialog: () => setNewNoteFolderId(undefined),
     uploadTargetFolderId,
     openUploadDialog: (folderId) => setUploadTargetFolderId(folderId),

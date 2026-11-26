@@ -144,4 +144,46 @@ describe("VaultService CRUD and copy operations", () => {
     expect(afterDelete.metadata.folders.length).toBe(2);
     expect(afterDelete.metadata.files.length).toBe(2);
   });
+
+  it("collects bulk download entries recursively with deduplication and empty folders", async () => {
+    const adapter = createInMemoryStorage();
+    const vault = new VaultService(adapter);
+
+    const { folder: proj } = await vault.createFolder({
+      name: "Projects",
+      parentId: null,
+    });
+    const { folder: sub } = await vault.createFolder({
+      name: "Backend",
+      parentId: proj.id,
+    });
+    await vault.createFolder({
+      name: "EmptyDir",
+      parentId: proj.id,
+    });
+
+    const { file: nestedFile } = await vault.createNote({
+      name: "api.md",
+      folderId: sub.id,
+      content: "# API Docs",
+    });
+    const { file: rootFile } = await vault.createNote({
+      name: "readme.md",
+      folderId: null,
+      content: "# Root Readme",
+    });
+
+    // Select folder + already-nested file (should deduplicate) + root file
+    const result = await vault.collectDownloadEntries({
+      folderIds: [proj.id],
+      fileIds: [nestedFile.id, rootFile.id],
+    });
+
+    expect(result.entries.map((e) => e.archivePath)).toEqual([
+      "Projects/Backend/api.md",
+      "readme.md",
+    ]);
+    expect(result.emptyFolderPaths).toEqual(["Projects/EmptyDir/"]);
+    expect(result.totalBytes).toBe(nestedFile.size + rootFile.size);
+  });
 });

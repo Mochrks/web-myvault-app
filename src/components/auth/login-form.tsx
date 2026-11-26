@@ -39,9 +39,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       router.replace(nextPath.startsWith("/") ? nextPath : "/dashboard");
       router.refresh();
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Authentication failed.",
-      );
+      setErrorMessage(err instanceof Error ? err.message : "Authentication failed.");
       setLoading(false);
     }
   };
@@ -88,10 +86,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label
-              htmlFor="vault-password"
-              className="text-xs font-medium text-foreground"
-            >
+            <label htmlFor="vault-password" className="text-xs font-medium text-foreground">
               Vault Password
             </label>
             <div className="relative">
@@ -112,11 +107,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
@@ -124,17 +115,13 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           {errorMessage && (
             <div
               role="alert"
-              className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+              className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs text-red-300"
             >
               {errorMessage}
             </div>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={loading || redirecting}
-          >
+          <Button type="submit" className="w-full" disabled={loading || redirecting}>
             {redirecting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

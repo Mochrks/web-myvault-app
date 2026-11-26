@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import GradientASCII from "@/components/ui/GradientASCII";
 import { getServerSession } from "@/lib/auth/session";
+
+export const metadata: Metadata = {
+  title: "login",
+};
 
 export default async function LoginPage(props: {
   searchParams: Promise<{ next?: string }>;

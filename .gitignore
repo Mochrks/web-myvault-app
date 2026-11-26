@@ -43,5 +43,6 @@ next-env.d.ts
 
 # local docs / agent instructions / logs (excluded from repo)
 AGENTS.md
+PLAN.md
 myvault-app-prd-prompt.md
 logs/

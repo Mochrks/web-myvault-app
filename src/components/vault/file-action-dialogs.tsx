@@ -103,7 +103,7 @@ function RenameItemDialogContent({
     <DialogContent>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
-          <Pencil className="h-4 w-4 text-indigo-400" />
+          <Pencil className="h-4 w-4 text-muted-foreground" />
           Rename {target.kind === "folder" ? "Folder" : "File"}
         </DialogTitle>
         <DialogDescription>
@@ -119,13 +119,18 @@ function RenameItemDialogContent({
         />
         {error && <p className="text-xs text-red-400">{error}</p>}
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={saving}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={saving}>
             {saving ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Saving...
               </>
             ) : (
@@ -250,16 +255,17 @@ function CopyItemDialogContent({
     <DialogContent>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-2">
-          <Copy className="h-4 w-4 text-indigo-400" />
+          <Copy className="h-4 w-4 text-muted-foreground" />
           Copy {target.kind === "folder" ? "Folder" : "File"}
         </DialogTitle>
         <DialogDescription>
-          Duplicate &ldquo;{target.item.name}&rdquo; without modifying the original.
+          Duplicate &ldquo;{target.item.name}&rdquo; without modifying the
+          original.
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[#98a2b3]">
+          <label className="text-xs font-medium text-muted-foreground">
             Destination Folder
           </label>
           <Select value={destinationId} onValueChange={setDestinationId}>
@@ -278,7 +284,7 @@ function CopyItemDialogContent({
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-[#98a2b3]">
+          <label className="text-xs font-medium text-muted-foreground">
             New Name (optional — auto-suffixed if left blank)
           </label>
           <Input
@@ -292,13 +298,18 @@ function CopyItemDialogContent({
         {error && <p className="text-xs text-red-400">{error}</p>}
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose} disabled={copying}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={copying}
+          >
             Cancel
           </Button>
           <Button type="submit" disabled={copying}>
             {copying ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Copying...
               </>
             ) : (
@@ -387,7 +398,7 @@ export function DeleteConfirmDialog({
             {target?.kind === "folder" ? (
               <>
                 This will permanently delete{" "}
-                <strong className="text-[#eef1f7]">{target.item.name}</strong>
+                <strong className="text-foreground">{target.item.name}</strong>
                 {visibleCounts
                   ? ` along with ${visibleCounts.subfolderCount} subfolder(s) and ${visibleCounts.fileCount} file(s)`
                   : " and all subfolders and files inside it"}
@@ -396,7 +407,9 @@ export function DeleteConfirmDialog({
             ) : (
               <>
                 This will permanently remove{" "}
-                <strong className="text-[#eef1f7]">{target?.item.name}</strong>{" "}
+                <strong className="text-foreground">
+                  {target?.item.name}
+                </strong>{" "}
                 from private object storage. This action cannot be undone.
               </>
             )}

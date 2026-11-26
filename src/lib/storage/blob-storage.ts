@@ -26,26 +26,24 @@ export interface StoredObjectRead {
 }
 
 export interface BlobStorageAdapter {
-  readJsonWithEtag(
-    pathname: string,
-  ): Promise<{ text: string; etag: string } | null>;
+  readJsonWithEtag(pathname: string): Promise<{ text: string; etag: string } | null>;
   writeJson(
     pathname: string,
     content: string,
-    options?: { ifMatch?: string; allowOverwrite?: boolean },
+    options?: { ifMatch?: string; allowOverwrite?: boolean }
   ): Promise<{ etag: string; pathname: string }>;
   putPrivateObject(
     pathname: string,
     body: Buffer | Uint8Array | string,
     contentType: string,
-    options?: { allowOverwrite?: boolean },
+    options?: { allowOverwrite?: boolean }
   ): Promise<{ pathname: string; etag: string }>;
   getPrivateObjectStream(pathname: string): Promise<StoredObjectRead>;
   headPrivateObject(pathname: string): Promise<StoredObjectHead>;
   copyPrivateObject(
     fromPathname: string,
     toPathname: string,
-    contentType?: string,
+    contentType?: string
   ): Promise<{ pathname: string; etag: string }>;
   deletePrivateObjects(pathnames: string[]): Promise<void>;
 }
@@ -53,9 +51,7 @@ export interface BlobStorageAdapter {
 export function isBlobStorageConfigured(): boolean {
   if (process.env.BLOB_READ_WRITE_TOKEN?.trim()) return true;
   const storeId = process.env.BLOB_STORE_ID?.trim();
-  const hasOidc = Boolean(
-    process.env.VERCEL_OIDC_TOKEN?.trim() || process.env.VERCEL,
-  );
+  const hasOidc = Boolean(process.env.VERCEL_OIDC_TOKEN?.trim() || process.env.VERCEL);
   return Boolean(storeId && hasOidc);
 }
 
@@ -64,9 +60,7 @@ function getBlobAuthOptions(): { token?: string } {
   if (token) return { token };
 
   const storeId = process.env.BLOB_STORE_ID?.trim();
-  const hasOidc = Boolean(
-    process.env.VERCEL_OIDC_TOKEN?.trim() || process.env.VERCEL,
-  );
+  const hasOidc = Boolean(process.env.VERCEL_OIDC_TOKEN?.trim() || process.env.VERCEL);
   if (storeId && hasOidc) {
     // @vercel/blob SDK automatically reads VERCEL_OIDC_TOKEN + BLOB_STORE_ID
     return {};
@@ -75,13 +69,11 @@ function getBlobAuthOptions(): { token?: string } {
   throw new VaultAppError(
     "STORAGE_NOT_CONFIGURED",
     "Vercel Blob credentials are not configured. Set BLOB_READ_WRITE_TOKEN, or connect your Vercel Blob store (BLOB_STORE_ID + Vercel OIDC).",
-    503,
+    503
   );
 }
 
-async function streamToUtf8(
-  stream: ReadableStream<Uint8Array>,
-): Promise<string> {
+async function streamToUtf8(stream: ReadableStream<Uint8Array>): Promise<string> {
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   while (true) {
@@ -92,16 +84,44 @@ async function streamToUtf8(
   return Buffer.concat(chunks).toString("utf8");
 }
 
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withTransientRetry<T>(operation: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      if (
+        err instanceof BlobNotFoundError ||
+        err instanceof BlobPreconditionFailedError ||
+        err instanceof VaultAppError
+      ) {
+        throw err;
+      }
+      lastError = err;
+      if (attempt < maxAttempts) {
+        await sleep(250 * attempt);
+      }
+    }
+  }
+  throw lastError;
+}
+
 export function createVercelBlobAdapter(): BlobStorageAdapter {
   return {
     async readJsonWithEtag(pathname: string) {
       const auth = getBlobAuthOptions();
       try {
-        const result = await get(pathname, {
-          access: "private",
-          useCache: false,
-          ...auth,
-        });
+        const result = await withTransientRetry(() =>
+          get(pathname, {
+            access: "private",
+            useCache: false,
+            ...auth,
+          })
+        );
         if (!result || result.statusCode !== 200 || !result.stream) {
           return null;
         }
@@ -115,10 +135,14 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
         if (err instanceof BlobNotFoundError) {
           return null;
         }
+        if (err instanceof VaultAppError) {
+          throw err;
+        }
+        console.error("[myvault] readJsonWithEtag failed:", err);
         throw new VaultAppError(
           "STORAGE_READ_ERROR",
           "Failed to read metadata from private object storage.",
-          502,
+          502
         );
       }
     },
@@ -132,9 +156,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           cacheControlMaxAge: 60,
           allowOverwrite: options?.allowOverwrite ?? true,
           addRandomSuffix: false,
-          ...(options?.ifMatch
-            ? { ifMatch: options.ifMatch.replace(/^W\//i, "") }
-            : {}),
+          ...(options?.ifMatch ? { ifMatch: options.ifMatch.replace(/^W\//i, "") } : {}),
           ...auth,
         });
         return {
@@ -146,7 +168,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           throw new VaultAppError(
             "METADATA_CONFLICT",
             "Vault metadata was updated by another request. Please refresh and try again.",
-            409,
+            409
           );
         }
         const message = err instanceof Error ? err.message : "";
@@ -154,13 +176,13 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           throw new VaultAppError(
             "METADATA_CONFLICT",
             "Vault metadata already exists concurrently. Please retry.",
-            409,
+            409
           );
         }
         throw new VaultAppError(
           "STORAGE_WRITE_ERROR",
           "Failed to persist metadata to private object storage.",
-          502,
+          502
         );
       }
     },
@@ -185,7 +207,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
         throw new VaultAppError(
           "STORAGE_UPLOAD_ERROR",
           "Failed to store file in private object storage.",
-          502,
+          502
         );
       }
     },
@@ -193,16 +215,18 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
     async getPrivateObjectStream(pathname: string) {
       const auth = getBlobAuthOptions();
       try {
-        const result = await get(pathname, {
-          access: "private",
-          useCache: false,
-          ...auth,
-        });
+        const result = await withTransientRetry(() =>
+          get(pathname, {
+            access: "private",
+            useCache: false,
+            ...auth,
+          })
+        );
         if (!result || result.statusCode !== 200 || !result.stream) {
           throw new VaultAppError(
             "OBJECT_NOT_FOUND",
             "The requested file binary does not exist in storage.",
-            404,
+            404
           );
         }
         return {
@@ -218,13 +242,14 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           throw new VaultAppError(
             "OBJECT_NOT_FOUND",
             "The requested file binary does not exist in storage.",
-            404,
+            404
           );
         }
+        console.error("[myvault] getPrivateObjectStream failed:", err);
         throw new VaultAppError(
           "STORAGE_READ_ERROR",
           "Failed to retrieve file from private object storage.",
-          502,
+          502
         );
       }
     },
@@ -245,13 +270,13 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           throw new VaultAppError(
             "OBJECT_NOT_FOUND",
             "Uploaded object could not be found in private storage.",
-            404,
+            404
           );
         }
         throw new VaultAppError(
           "STORAGE_READ_ERROR",
           "Failed to inspect object metadata in storage.",
-          502,
+          502
         );
       }
     },
@@ -275,13 +300,13 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
           throw new VaultAppError(
             "OBJECT_NOT_FOUND",
             "Source file object does not exist in storage.",
-            404,
+            404
           );
         }
         throw new VaultAppError(
           "STORAGE_COPY_ERROR",
           "Failed to copy object in private storage.",
-          502,
+          502
         );
       }
     },
@@ -298,7 +323,7 @@ export function createVercelBlobAdapter(): BlobStorageAdapter {
         throw new VaultAppError(
           "STORAGE_DELETE_ERROR",
           "Failed to delete object(s) from private storage.",
-          502,
+          502
         );
       }
     },

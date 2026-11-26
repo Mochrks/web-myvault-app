@@ -113,6 +113,16 @@ export const prepareUploadSchema = z.object({
   mimeType: z.string().max(200).optional(),
 });
 
+export const bulkDownloadSchema = z
+  .object({
+    fileIds: z.array(z.string().uuid()).max(250).default([]),
+    folderIds: z.array(z.string().uuid()).max(100).default([]),
+    archiveName: safeEntryNameSchema.optional(),
+  })
+  .refine((v) => v.fileIds.length > 0 || v.folderIds.length > 0, {
+    message: "Select at least one file or folder to download.",
+  });
+
 export const vaultFolderSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),

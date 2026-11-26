@@ -6,15 +6,27 @@ import { upload as blobClientUpload } from "@vercel/blob/client";
 import {
   CheckCircle2,
   FileUp,
+  Files,
   FolderPlus,
+  LayoutDashboard,
   Loader2,
   NotebookPen,
-  Search,
+  Star,
+  Upload,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +36,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -34,6 +47,7 @@ import {
 import { VaultEntryIcon } from "@/components/vault/file-icon";
 import { useVault } from "@/components/vault/vault-provider";
 import { apiRequest } from "@/lib/api/client";
+import { cn } from "@/lib/utils/cn";
 import { formatBytes } from "@/lib/utils/format";
 import type { VaultFile, VaultFolder, VaultMetadataIndex } from "@/types/vault";
 
@@ -50,7 +64,7 @@ interface UploadItemState {
 function uploadViaServerWithProgress(
   file: File,
   folderId: string | null,
-  onProgress: (pct: number) => void,
+  onProgress: (pct: number) => void
 ): Promise<{ file: VaultFile; metadata: VaultMetadataIndex }> {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
@@ -75,9 +89,7 @@ function uploadViaServerWithProgress(
           resolve(parsed.data);
         } else {
           reject(
-            new Error(
-              parsed?.error?.message || `Upload failed (${xhr.status})`,
-            ),
+            new Error(parsed?.error?.message || `Upload failed (${xhr.status})`)
           );
         }
       } catch {
@@ -141,7 +153,7 @@ function CreateFolderDialog() {
       });
       setMetadata(res.metadata);
       toast.success(`Folder "${res.folder.name}" created`);
-      closeNewFolderDialog();
+      handleClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create folder.");
     } finally {
@@ -154,7 +166,7 @@ function CreateFolderDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FolderPlus className="h-4 w-4 text-indigo-400" />
+            <FolderPlus className="h-4 w-4 text-muted-foreground" />
             New Folder
           </DialogTitle>
           <DialogDescription>
@@ -163,7 +175,7 @@ function CreateFolderDialog() {
         </DialogHeader>
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
           <Input
-            placeholder="e.g. Golang, Notes, Contracts"
+            placeholder="e.g. Architecture, Notes, Contracts"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
@@ -174,7 +186,7 @@ function CreateFolderDialog() {
             <Button
               type="button"
               variant="outline"
-              onClick={closeNewFolderDialog}
+              onClick={handleClose}
               disabled={submitting}
             >
               Cancel
@@ -182,7 +194,7 @@ function CreateFolderDialog() {
             <Button type="submit" disabled={submitting}>
               {submitting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   Creating...
                 </>
               ) : (
@@ -197,32 +209,48 @@ function CreateFolderDialog() {
 }
 
 function CreateNoteDialog() {
+  const { newNoteFolderId, newNoteDefaultFormat, closeNewNoteDialog } =
+    useVault();
+  const open = newNoteFolderId !== undefined;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && closeNewNoteDialog()}>
+      {open && (
+        <CreateNoteDialogContent
+          key={`${newNoteFolderId ?? "root"}-${newNoteDefaultFormat}`}
+          folderId={newNoteFolderId ?? null}
+          defaultFormat={newNoteDefaultFormat}
+          onClose={closeNewNoteDialog}
+        />
+      )}
+    </Dialog>
+  );
+}
+
+function CreateNoteDialogContent({
+  folderId,
+  defaultFormat,
+  onClose,
+}: {
+  folderId: string | null;
+  defaultFormat: "md" | "txt";
+  onClose: () => void;
+}) {
   const router = useRouter();
-  const {
-    newNoteFolderId,
-    closeNewNoteDialog,
-    setMetadata,
-    getFolderPathLabel,
-  } = useVault();
+  const { setMetadata, getFolderPathLabel } = useVault();
   const [name, setName] = React.useState("");
-  const [format, setFormat] = React.useState<"md" | "txt">("md");
+  const [format, setFormat] = React.useState<"md" | "txt">(defaultFormat);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const open = newNoteFolderId !== undefined;
-
-  const handleClose = () => {
-    setName("");
-    setFormat("md");
-    setError(null);
-    closeNewNoteDialog();
-  };
+  const isMd = format === "md";
+  const label = isMd ? "Markdown" : "Note";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const raw = name.trim();
     if (!raw) {
-      setError("Note title is required.");
+      setError(`${label} title is required.`);
       return;
     }
 
@@ -248,80 +276,82 @@ function CreateNoteDialog() {
         method: "POST",
         body: JSON.stringify({
           name: finalName,
-          folderId: newNoteFolderId ?? null,
+          folderId,
           content: initialContent,
         }),
       });
       setMetadata(res.metadata);
-      toast.success(`Note "${res.file.name}" created`);
-      closeNewNoteDialog();
+      toast.success(`${label} "${res.file.name}" created`);
+      onClose();
       router.push(`/notes/${res.file.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create note.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to create ${label.toLowerCase()}.`
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <NotebookPen className="h-4 w-4 text-violet-400" />
-            New Note
-          </DialogTitle>
-          <DialogDescription>
-            Location: {getFolderPathLabel(newNoteFolderId ?? null)}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g. redis-patterns"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-              disabled={submitting}
-              className="flex-1"
-            />
-            <Select
-              value={format}
-              onValueChange={(v) => setFormat(v as "md" | "txt")}
-            >
-              <SelectTrigger className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="md">.md</SelectItem>
-                <SelectItem value="txt">.txt</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {error && <p className="text-xs text-red-400">{error}</p>}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={closeNewNoteDialog}
-              disabled={submitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create & Open"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          <NotebookPen className="h-4 w-4 text-muted-foreground" />
+          New {label}
+        </DialogTitle>
+        <DialogDescription>
+          Location: {getFolderPathLabel(folderId)}
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+        <div className="flex gap-2">
+          <Input
+            placeholder={isMd ? "e.g. system-design" : "e.g. quick-notes"}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            disabled={submitting}
+            className="flex-1"
+          />
+          <Select
+            value={format}
+            onValueChange={(v) => setFormat(v as "md" | "txt")}
+          >
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="md">Markdown (.md)</SelectItem>
+              <SelectItem value="txt">Notes (.txt)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {error && <p className="text-xs text-red-400">{error}</p>}
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            disabled={submitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              `Create ${label}`
+            )}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
   );
 }
 
@@ -373,8 +403,8 @@ function UploadFilesDialog() {
     for (const item of pending) {
       setItems((prev) =>
         prev.map((x) =>
-          x.id === item.id ? { ...x, status: "uploading", progress: 5 } : x,
-        ),
+          x.id === item.id ? { ...x, status: "uploading", progress: 5 } : x
+        )
       );
 
       try {
@@ -386,10 +416,10 @@ function UploadFilesDialog() {
             (pct) => {
               setItems((prev) =>
                 prev.map((x) =>
-                  x.id === item.id ? { ...x, progress: pct } : x,
-                ),
+                  x.id === item.id ? { ...x, progress: pct } : x
+                )
               );
-            },
+            }
           );
           latestMeta = result.metadata;
         } else {
@@ -410,8 +440,8 @@ function UploadFilesDialog() {
                 prev.map((x) =>
                   x.id === item.id
                     ? { ...x, progress: Math.round(evt.percentage) }
-                    : x,
-                ),
+                    : x
+                )
               );
             },
           });
@@ -435,15 +465,15 @@ function UploadFilesDialog() {
         successCount += 1;
         setItems((prev) =>
           prev.map((x) =>
-            x.id === item.id ? { ...x, status: "done", progress: 100 } : x,
-          ),
+            x.id === item.id ? { ...x, status: "done", progress: 100 } : x
+          )
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Upload failed.";
         setItems((prev) =>
           prev.map((x) =>
-            x.id === item.id ? { ...x, status: "error", error: message } : x,
-          ),
+            x.id === item.id ? { ...x, status: "error", error: message } : x
+          )
         );
       }
     }
@@ -451,7 +481,7 @@ function UploadFilesDialog() {
     setUploading(false);
     if (successCount > 0) {
       toast.success(
-        `Uploaded ${successCount} file${successCount > 1 ? "s" : ""}`,
+        `Uploaded ${successCount} file${successCount > 1 ? "s" : ""}`
       );
     }
   };
@@ -468,12 +498,12 @@ function UploadFilesDialog() {
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FileUp className="h-4 w-4 text-indigo-400" />
+            <FileUp className="h-4 w-4 text-muted-foreground" />
             Upload Files
           </DialogTitle>
           <DialogDescription>
             Target: {getFolderPathLabel(uploadTargetFolderId ?? null)} · Max{" "}
-            {maxUploadSizeMb} MB per file (stored in private Blob)
+            {maxUploadSizeMb} MB per file
           </DialogDescription>
         </DialogHeader>
 
@@ -489,17 +519,20 @@ function UploadFilesDialog() {
             addFiles(e.dataTransfer.files);
           }}
           onClick={() => !uploading && inputRef.current?.click()}
-          className={`mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-8 text-center transition-colors ${
+          className={cn(
+            "mt-4 flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed px-4 py-8 text-center transition-colors",
             dragActive
-              ? "border-indigo-500 bg-indigo-500/10"
-              : "border-[#2f364b] bg-[#0e1118] hover:border-indigo-500/60"
-          }`}
+              ? "border-foreground/60 bg-accent/60"
+              : "border-border bg-background hover:border-muted-foreground/50 hover:bg-card/60"
+          )}
         >
-          <FileUp className="mb-2 h-7 w-7 text-indigo-400" />
-          <p className="text-sm font-medium text-[#eef1f7]">
+          <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card">
+            <FileUp className="h-5 w-5 text-foreground" />
+          </div>
+          <p className="text-sm font-medium text-foreground">
             Drop files here or click to browse
           </p>
-          <p className="mt-1 text-xs text-[#6b7489]">
+          <p className="mt-1 text-xs text-muted-foreground">
             Code, notes, PDFs, Office docs, spreadsheets, archives, images,
             binaries
           </p>
@@ -520,14 +553,14 @@ function UploadFilesDialog() {
             {items.map((item) => (
               <div
                 key={item.id}
-                className="rounded-lg border border-[#232838] bg-[#0e1118] px-3 py-2"
+                className="rounded-lg border border-border bg-background px-3 py-2"
               >
                 <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate font-medium text-[#eef1f7]">
+                  <span className="truncate font-medium text-foreground">
                     {item.file.name}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[#6b7489]">
+                    <span className="font-mono text-muted-foreground">
                       {formatBytes(item.file.size)}
                     </span>
                     {item.status === "done" && (
@@ -537,21 +570,12 @@ function UploadFilesDialog() {
                       <XCircle className="h-4 w-4 text-red-400" />
                     )}
                     {item.status === "uploading" && (
-                      <Loader2 className="h-4 w-4 animate-spin text-indigo-400" />
+                      <Loader2 className="h-4 w-4 animate-spin text-foreground" />
                     )}
                   </div>
                 </div>
                 {(item.status === "uploading" || item.status === "done") && (
-                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[#1b202e]">
-                    <div
-                      className={`h-full transition-all ${
-                        item.status === "done"
-                          ? "bg-emerald-500"
-                          : "bg-indigo-500"
-                      }`}
-                      style={{ width: `${item.progress}%` }}
-                    />
-                  </div>
+                  <Progress value={item.progress} className="mt-2 h-1" />
                 )}
                 {item.error && (
                   <p className="mt-1 text-[11px] text-red-400">{item.error}</p>
@@ -565,7 +589,7 @@ function UploadFilesDialog() {
           <Button
             type="button"
             variant="outline"
-            onClick={closeUploadDialog}
+            onClick={handleClose}
             disabled={uploading}
           >
             {items.some((i) => i.status === "done") && pendingCount === 0
@@ -579,7 +603,7 @@ function UploadFilesDialog() {
           >
             {uploading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Uploading...
               </>
             ) : (
@@ -600,125 +624,130 @@ function GlobalSearchDialog() {
     setActiveSearchOpen,
     getFolderPathLabel,
     setPreviewFile,
+    openNewFolderDialog,
+    openNewNoteDialog,
+    openUploadDialog,
   } = useVault();
-  const [query, setQuery] = React.useState("");
 
-  const normalized = query.trim().toLowerCase();
-
-  const matchingFolders = React.useMemo(() => {
-    if (!normalized) return metadata.folders.slice(0, 5);
-    return metadata.folders
-      .filter((f) => f.name.toLowerCase().includes(normalized))
-      .slice(0, 12);
-  }, [metadata.folders, normalized]);
-
-  const matchingFiles = React.useMemo(() => {
-    if (!normalized) return metadata.files.slice(0, 8);
-    return metadata.files
-      .filter((f) => f.name.toLowerCase().includes(normalized))
-      .slice(0, 20);
-  }, [metadata.files, normalized]);
+  const runAction = (fn: () => void) => {
+    setActiveSearchOpen(false);
+    fn();
+  };
 
   return (
-    <Dialog
+    <CommandDialog
       open={activeSearchOpen}
-      onOpenChange={(v) => {
-        if (!v) setQuery("");
-        setActiveSearchOpen(v);
-      }}
+      onOpenChange={setActiveSearchOpen}
+      title="Search Vault & Commands"
     >
-      <DialogContent className="max-w-xl p-0 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-[#232838] px-4 py-3">
-          <Search className="h-4 w-4 text-[#6b7489]" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search folders and files across vault..."
-            autoFocus
-            className="w-full bg-transparent text-sm text-[#eef1f7] placeholder:text-[#6b7489] focus:outline-none"
-          />
-          <Badge>ESC</Badge>
-        </div>
-        <div className="max-h-96 overflow-y-auto p-2">
-          {matchingFolders.length === 0 && matchingFiles.length === 0 ? (
-            <div className="py-10 text-center text-xs text-[#6b7489]">
-              No folders or files match &ldquo;{query}&rdquo;.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {matchingFolders.length > 0 && (
-                <div>
-                  <p className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-[#6b7489] uppercase">
-                    Folders
-                  </p>
-                  <div className="space-y-0.5">
-                    {matchingFolders.map((folder) => (
-                      <button
-                        key={folder.id}
-                        type="button"
-                        onClick={() => {
-                          setActiveSearchOpen(false);
-                          router.push(`/files/${folder.id}`);
-                        }}
-                        className="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-xs transition-colors hover:bg-[#171b26] cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <VaultEntryIcon type="folder" />
-                          <span className="truncate font-medium text-[#eef1f7]">
-                            {folder.name}
-                          </span>
-                        </div>
-                        <span className="truncate text-[11px] text-[#6b7489]">
-                          {getFolderPathLabel(folder.parentId)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+      <CommandInput placeholder="Search files, folders, or run a command..." />
+      <CommandList>
+        <CommandEmpty>No matching files, folders, or commands.</CommandEmpty>
 
-              {matchingFiles.length > 0 && (
-                <div>
-                  <p className="px-2.5 py-1 text-[11px] font-semibold tracking-wider text-[#6b7489] uppercase">
-                    Files
-                  </p>
-                  <div className="space-y-0.5">
-                    {matchingFiles.map((file) => (
-                      <button
-                        key={file.id}
-                        type="button"
-                        onClick={() => {
-                          setActiveSearchOpen(false);
-                          if (file.kind === "note") {
-                            router.push(`/notes/${file.id}`);
-                          } else {
-                            const targetRoute = file.folderId
-                              ? `/files/${file.folderId}`
-                              : "/files";
-                            router.push(targetRoute);
-                            setPreviewFile(file);
-                          }
-                        }}
-                        className="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-xs transition-colors hover:bg-[#171b26] cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <VaultEntryIcon type="file" kind={file.kind} />
-                          <span className="truncate font-medium text-[#eef1f7]">
-                            {file.name}
-                          </span>
-                        </div>
-                        <span className="truncate text-[11px] text-[#6b7489]">
-                          {getFolderPathLabel(file.folderId)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        <CommandGroup heading="Quick Actions">
+          <CommandItem
+            onSelect={() => runAction(() => openNewNoteDialog(null, "md"))}
+          >
+            <NotebookPen className="h-4 w-4 text-muted-foreground" />
+            <span>New Markdown (.md)</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runAction(() => openNewNoteDialog(null, "txt"))}
+          >
+            <NotebookPen className="h-4 w-4 text-muted-foreground" />
+            <span>New Note (.txt)</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runAction(() => openUploadDialog(null))}
+          >
+            <Upload className="h-4 w-4 text-muted-foreground" />
+            <span>Upload Files</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => runAction(() => openNewFolderDialog(null))}
+          >
+            <FolderPlus className="h-4 w-4 text-muted-foreground" />
+            <span>New Folder</span>
+          </CommandItem>
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading="Navigation">
+          <CommandItem onSelect={() => runAction(() => router.push("/dashboard"))}>
+            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+            <span>Go to Dashboard</span>
+            <CommandShortcut>Home</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={() => runAction(() => router.push("/files"))}>
+            <Files className="h-4 w-4 text-muted-foreground" />
+            <span>Go to All Files</span>
+          </CommandItem>
+          <CommandItem onSelect={() => runAction(() => router.push("/favorites"))}>
+            <Star className="h-4 w-4 text-muted-foreground" />
+            <span>Go to Favorites</span>
+          </CommandItem>
+        </CommandGroup>
+
+        {metadata.folders.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Folders">
+              {metadata.folders.slice(0, 30).map((folder) => (
+                <CommandItem
+                  key={folder.id}
+                  value={`folder ${folder.name} ${getFolderPathLabel(folder.parentId)}`}
+                  onSelect={() =>
+                    runAction(() => router.push(`/files/${folder.id}`))
+                  }
+                >
+                  <VaultEntryIcon type="folder" />
+                  <span className="truncate font-medium">{folder.name}</span>
+                  <span className="ml-auto truncate text-[11px] text-muted-foreground">
+                    {getFolderPathLabel(folder.parentId)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+
+        {metadata.files.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Files">
+              {metadata.files.slice(0, 50).map((file) => (
+                <CommandItem
+                  key={file.id}
+                  value={`file ${file.name} ${getFolderPathLabel(file.folderId)}`}
+                  onSelect={() =>
+                    runAction(() => {
+                      if (
+                        file.extension === "md" ||
+                        file.extension === "markdown" ||
+                        file.extension === "txt"
+                      ) {
+                        router.push(`/notes/${file.id}`);
+                      } else {
+                        router.push(
+                          file.folderId ? `/files/${file.folderId}` : "/files"
+                        );
+                        setPreviewFile(file);
+                      }
+                    })
+                  }
+                >
+                  <VaultEntryIcon type="file" kind={file.kind} />
+                  <span className="truncate font-medium">{file.name}</span>
+                  <span className="ml-auto truncate text-[11px] text-muted-foreground">
+                    {getFolderPathLabel(file.folderId)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+      </CommandList>
+    </CommandDialog>
   );
 }

@@ -35,7 +35,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  serverExternalPackages: ["@node-rs/argon2", "shiki"],
+  serverExternalPackages: ["@node-rs/argon2", "shiki", "archiver"],
   turbopack: {
     rules: {
       "*.css": {

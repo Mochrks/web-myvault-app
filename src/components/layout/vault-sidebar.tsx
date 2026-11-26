@@ -2,26 +2,19 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
-  ChevronDown,
-  ChevronRight,
-  Copy,
+  FileText,
   Files,
   Folder,
-  FolderOpen,
   FolderPlus,
   HardDrive,
   LayoutDashboard,
   LogOut,
-  MoreHorizontal,
   NotebookPen,
-  Pencil,
+  PlusCircle,
   Star,
-  StickyNote,
-  Trash2,
   Upload,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,20 +22,18 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  CopyItemDialog,
-  DeleteConfirmDialog,
-  RenameItemDialog,
-  type ActionTarget,
-} from "@/components/vault/file-action-dialogs";
+import { Progress } from "@/components/ui/progress";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useVaultLayout } from "@/components/layout/vault-header-context";
 import { useVault } from "@/components/vault/vault-provider";
 import { apiRequest } from "@/lib/api/client";
 import { cn } from "@/lib/utils/cn";
 import { formatBytes } from "@/lib/utils/format";
-import type { VaultFolder } from "@/types/vault";
 
 function extractFolderIdFromPath(pathname: string): string | null {
   if (!pathname.startsWith("/files/")) return null;
@@ -50,226 +41,109 @@ function extractFolderIdFromPath(pathname: string): string | null {
   return rest.length > 0 ? rest[rest.length - 1] : null;
 }
 
-interface FolderTreeNodeProps {
-  folder: VaultFolder;
-  depth: number;
-  childrenMap: Map<string | null, VaultFolder[]>;
-  activeFolderId: string | null;
-  expandedIds: Set<string>;
-  toggleExpanded: (id: string) => void;
-  onAction: (action: "rename" | "copy" | "delete" | "favorite", folder: VaultFolder) => void;
-  onNavigate?: () => void;
-}
+const SOFT_STORAGE_QUOTA_BYTES = 1024 * 1024 * 1024; // 1 GB visual indicator reference
 
-function FolderTreeNode({
-  folder,
-  depth,
-  childrenMap,
-  activeFolderId,
-  expandedIds,
-  toggleExpanded,
-  onAction,
-  onNavigate,
-}: FolderTreeNodeProps) {
-  const { openNewFolderDialog, openNewNoteDialog } = useVault();
-  const childFolders = childrenMap.get(folder.id) ?? [];
-  const hasChildren = childFolders.length > 0;
-  const isExpanded = expandedIds.has(folder.id);
-  const isActive = activeFolderId === folder.id;
-
-  return (
-    <div className="select-none">
-      <div
-        className={cn(
-          "group flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
-          isActive
-            ? "bg-accent text-accent-foreground font-medium"
-            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-        )}
-      >
-        <button
-          type="button"
-          onClick={() => hasChildren && toggleExpanded(folder.id)}
-          className={cn(
-            "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-transform text-muted-foreground/80 hover:text-foreground",
-            !hasChildren && "invisible"
-          )}
-          aria-label={isExpanded ? "Collapse folder" : "Expand folder"}
-        >
-          {isExpanded ? (
-            <ChevronDown className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronRight className="h-3.5 w-3.5" />
-          )}
-        </button>
-
-        <Link
-          href={`/files/${folder.id}`}
-          onClick={onNavigate}
-          className="flex min-w-0 flex-1 items-center gap-2 py-0.5"
-        >
-          {isActive || isExpanded ? (
-            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-foreground/80" />
-          ) : (
-            <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          )}
-          <span className="truncate">{folder.name}</span>
-        </Link>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 data-[state=open]:opacity-100 text-muted-foreground hover:text-foreground"
-              aria-label={`Folder actions for ${folder.name}`}
-            >
-              <MoreHorizontal className="h-3 w-3" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onSelect={() => openNewFolderDialog(folder.id)}>
-              <FolderPlus className="h-4 w-4" />
-              New Subfolder
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => openNewNoteDialog(folder.id)}>
-              <NotebookPen className="h-4 w-4" />
-              New Note Here
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onAction("favorite", folder)}>
-              <Star
-                className={cn("h-4 w-4", folder.isFavorite && "fill-current text-foreground")}
-              />
-              {folder.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => onAction("rename", folder)}>
-              <Pencil className="h-4 w-4" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onAction("copy", folder)}>
-              <Copy className="h-4 w-4" />
-              Copy to...
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem destructive onSelect={() => onAction("delete", folder)}>
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div className="ml-3 pl-2 border-l border-border/50 space-y-0.5 mt-0.5">
-          {childFolders.map((child) => (
-            <FolderTreeNode
-              key={child.id}
-              folder={child}
-              depth={depth + 1}
-              childrenMap={childrenMap}
-              activeFolderId={activeFolderId}
-              expandedIds={expandedIds}
-              toggleExpanded={toggleExpanded}
-              onAction={onAction}
-              onNavigate={onNavigate}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function VaultSidebar({
-  mobileOpen,
-  onCloseMobile,
+function SidebarNavItem({
+  href,
+  label,
+  icon: Icon,
+  active,
+  collapsed,
+  badge,
+  onClick,
 }: {
-  mobileOpen: boolean;
-  onCloseMobile: () => void;
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+  collapsed: boolean;
+  badge?: number;
+  onClick?: () => void;
 }) {
+  const linkEl = (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
+        collapsed && "justify-center px-0 h-9 w-9 mx-auto",
+        active
+          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {!collapsed && <span className="truncate flex-1">{label}</span>}
+      {!collapsed && badge !== undefined && badge > 0 && (
+        <span className="font-mono text-[11px] tabular-nums text-muted-foreground">{badge}</span>
+      )}
+    </Link>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{linkEl}</TooltipTrigger>
+        <TooltipContent side="right">{label}</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return linkEl;
+}
+
+export function VaultSidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
+  const { sidebarCollapsed, mobileSidebarOpen, setMobileSidebarOpen } = useVaultLayout();
+
   const {
     metadata,
-    setMetadata,
-    getBreadcrumb,
     openNewFolderDialog,
     openNewNoteDialog,
     openUploadDialog,
   } = useVault();
 
   const activeFolderId = extractFolderIdFromPath(pathname);
-
-  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(() => new Set());
+  const currentKindParam = searchParams.get("kind");
   const [loggingOut, setLoggingOut] = React.useState(false);
-  const [renameTarget, setRenameTarget] = React.useState<ActionTarget | null>(null);
-  const [copyTarget, setCopyTarget] = React.useState<ActionTarget | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<ActionTarget | null>(null);
 
-  const autoExpandedIds = React.useMemo(() => {
-    if (!activeFolderId) return new Set<string>();
-    return new Set(getBreadcrumb(activeFolderId).map((f) => f.id));
-  }, [activeFolderId, getBreadcrumb]);
+  const pinnedFolders = React.useMemo(
+    () =>
+      metadata.folders
+        .filter((f) => f.isFavorite)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .slice(0, 6),
+    [metadata.folders]
+  );
 
-  const effectiveExpandedIds = React.useMemo(() => {
-    const merged = new Set(expandedIds);
-    for (const id of autoExpandedIds) {
-      merged.add(id);
-    }
-    return merged;
-  }, [expandedIds, autoExpandedIds]);
+  const markdownCount = React.useMemo(
+    () =>
+      metadata.files.filter(
+        (f) => f.extension === "md" || f.extension === "markdown"
+      ).length,
+    [metadata.files]
+  );
 
-  const childrenMap = React.useMemo(() => {
-    const map = new Map<string | null, VaultFolder[]>();
-    const sorted = [...metadata.folders].sort((a, b) => a.name.localeCompare(b.name));
-    for (const folder of sorted) {
-      const list = map.get(folder.parentId) ?? [];
-      list.push(folder);
-      map.set(folder.parentId, list);
-    }
-    return map;
-  }, [metadata.folders]);
+  const notesCount = React.useMemo(
+    () => metadata.files.filter((f) => f.extension === "txt").length,
+    [metadata.files]
+  );
 
-  const rootFolders = childrenMap.get(null) ?? [];
+  const favoritesCount = React.useMemo(
+    () =>
+      metadata.folders.filter((f) => f.isFavorite).length +
+      metadata.files.filter((f) => f.isFavorite).length,
+    [metadata.folders, metadata.files]
+  );
 
   const totalBytes = React.useMemo(
     () => metadata.files.reduce((sum, f) => sum + f.size, 0),
     [metadata.files]
   );
 
-  const toggleExpanded = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const handleFolderAction = async (
-    action: "rename" | "copy" | "delete" | "favorite",
-    folder: VaultFolder
-  ) => {
-    if (action === "favorite") {
-      try {
-        const res = await apiRequest<{
-          metadata: typeof metadata;
-        }>(`/api/vault/folders/${folder.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ isFavorite: !folder.isFavorite }),
-        });
-        setMetadata(res.metadata);
-        toast.success(folder.isFavorite ? "Removed from favorites" : "Added to favorites");
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Failed to update favorite.");
-      }
-      return;
-    }
-    const target: ActionTarget = { kind: "folder", item: folder };
-    if (action === "rename") setRenameTarget(target);
-    else if (action === "copy") setCopyTarget(target);
-    else setDeleteTarget(target);
-  };
+  const storagePercent = Math.min(100, Math.round((totalBytes / SOFT_STORAGE_QUOTA_BYTES) * 100));
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -283,214 +157,298 @@ export function VaultSidebar({
     }
   };
 
-  const sidebarBody = (
-    <div className="flex h-full flex-col bg-card/60 backdrop-blur-sm">
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
-        <Link
-          href="/dashboard"
-          onClick={onCloseMobile}
-          className="flex items-center gap-2 hover:opacity-85 transition-opacity"
-        >
-          <StickyNote className="h-4 w-4 text-foreground" />
-          <span className="text-sm font-semibold tracking-tight text-foreground">myvault</span>
-          <span className="rounded border border-border/70 bg-muted/50 px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
-            private
-          </span>
-        </Link>
-        <button
-          type="button"
-          onClick={onCloseMobile}
-          className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-          aria-label="Close sidebar"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+  const renderSidebarContent = (collapsed: boolean, onCloseMobile?: () => void) => {
+    const closeAnd = (fn: () => void) => {
+      onCloseMobile?.();
+      fn();
+    };
 
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
-        <div className="space-y-1">
+    const isMarkdownView = pathname === "/files" && currentKindParam === "markdown";
+    const isNotesView = pathname === "/files" && currentKindParam === "note";
+    const isFilesView =
+      (pathname === "/files" &&
+        currentKindParam !== "note" &&
+        currentKindParam !== "markdown") ||
+      pathname.startsWith("/files/");
+
+    return (
+      <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+        {/* Brand Header */}
+        <div
+          className={cn(
+            "flex h-13 shrink-0 items-center justify-center px-3.5",
+            collapsed && "px-0"
+          )}
+        >
           <Link
             href="/dashboard"
             onClick={onCloseMobile}
-            className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
-              pathname === "/dashboard"
-                ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-            )}
+            className="transition-opacity hover:opacity-85"
           >
-            <LayoutDashboard className="h-3.5 w-3.5" />
-            Dashboard
-          </Link>
-
-          <Link
-            href="/files"
-            onClick={onCloseMobile}
-            className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
-              pathname === "/files" || pathname.startsWith("/files/")
-                ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            {collapsed ? (
+              <span className="text-base font-bold tracking-tight text-foreground">mv</span>
+            ) : (
+              <span className="text-xl font-bold tracking-tight text-foreground">myvault</span>
             )}
-          >
-            <Files className="h-3.5 w-3.5" />
-            All Files
-          </Link>
-
-          <Link
-            href="/favorites"
-            onClick={onCloseMobile}
-            className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs transition-colors",
-              pathname === "/favorites"
-                ? "bg-accent text-accent-foreground font-medium"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-            )}
-          >
-            <Star className="h-3.5 w-3.5" />
-            Favorites
           </Link>
         </div>
 
-        <div className="space-y-1.5">
-          <div className="px-2 text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-            Quick Actions
-          </div>
-          <div className="grid grid-cols-3 gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 px-1.5 text-xs font-normal gap-1 hover:bg-accent"
-              onClick={() => {
-                onCloseMobile();
-                openNewFolderDialog(activeFolderId);
-              }}
-            >
-              <FolderPlus className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span>Folder</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 px-1.5 text-xs font-normal gap-1 hover:bg-accent"
-              onClick={() => {
-                onCloseMobile();
-                openNewNoteDialog(activeFolderId);
-              }}
-            >
-              <NotebookPen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span>Note</span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 px-1.5 text-xs font-normal gap-1 hover:bg-accent"
-              onClick={() => {
-                onCloseMobile();
-                openUploadDialog(activeFolderId);
-              }}
-            >
-              <Upload className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <span>Upload</span>
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-2">
-            <span className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-              Explorer
-            </span>
-            <button
-              type="button"
-              onClick={() => openNewFolderDialog(null)}
-              className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-              title="New root folder"
-              aria-label="New root folder"
-            >
-              <FolderPlus className="h-3.5 w-3.5" />
-            </button>
-          </div>
-
-          {rootFolders.length === 0 ? (
-            <p className="px-2.5 py-2 text-xs text-muted-foreground">No folders created yet.</p>
+        {/* Quick Create */}
+        <div className={cn("px-3 pt-1 pb-3", collapsed && "px-2")}>
+          {collapsed ? (
+            <div className="flex flex-col items-center">
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        className="h-9 w-9 rounded-lg"
+                        aria-label="Quick create"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Quick Create</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent side="right" align="start" className="w-48">
+                  <DropdownMenuLabel>Create or Upload</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => closeAnd(() => openUploadDialog(activeFolderId))}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload Files
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => closeAnd(() => openNewNoteDialog(activeFolderId, "md"))}
+                  >
+                    <NotebookPen className="h-3.5 w-3.5" />
+                    New Markdown (.md)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => closeAnd(() => openNewNoteDialog(activeFolderId, "txt"))}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    New Note (.txt)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => closeAnd(() => openNewFolderDialog(activeFolderId))}
+                  >
+                    <FolderPlus className="h-3.5 w-3.5" />
+                    New Folder
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           ) : (
-            <div className="space-y-0.5">
-              {rootFolders.map((folder) => (
-                <FolderTreeNode
-                  key={folder.id}
-                  folder={folder}
-                  depth={0}
-                  childrenMap={childrenMap}
-                  activeFolderId={activeFolderId}
-                  expandedIds={effectiveExpandedIds}
-                  toggleExpanded={toggleExpanded}
-                  onAction={handleFolderAction}
-                  onNavigate={onCloseMobile}
-                />
-              ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-9 w-full justify-start gap-2 rounded-lg px-3 font-medium"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  <span>Quick Create</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                <DropdownMenuLabel>Create in current folder</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={() => closeAnd(() => openUploadDialog(activeFolderId))}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload Files
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => closeAnd(() => openNewNoteDialog(activeFolderId, "md"))}
+                >
+                  <NotebookPen className="h-3.5 w-3.5" />
+                  New Markdown (.md)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => closeAnd(() => openNewNoteDialog(activeFolderId, "txt"))}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  New Note (.txt)
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => closeAnd(() => openNewFolderDialog(activeFolderId))}
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                  New Folder
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        {/* Navigation Links */}
+        <div className="flex-1 overflow-y-auto px-3 space-y-6">
+          <nav aria-label="Workspace navigation" className="space-y-0.5">
+            <SidebarNavItem
+              href="/dashboard"
+              label="Dashboard"
+              icon={LayoutDashboard}
+              active={pathname === "/dashboard"}
+              collapsed={collapsed}
+              onClick={onCloseMobile}
+            />
+            <SidebarNavItem
+              href="/files"
+              label="All Files"
+              icon={Files}
+              active={isFilesView}
+              collapsed={collapsed}
+              badge={metadata.files.length}
+              onClick={onCloseMobile}
+            />
+            <SidebarNavItem
+              href="/files?kind=markdown"
+              label="Markdown"
+              icon={NotebookPen}
+              active={isMarkdownView}
+              collapsed={collapsed}
+              badge={markdownCount}
+              onClick={onCloseMobile}
+            />
+            <SidebarNavItem
+              href="/files?kind=note"
+              label="Notes"
+              icon={FileText}
+              active={isNotesView}
+              collapsed={collapsed}
+              badge={notesCount}
+              onClick={onCloseMobile}
+            />
+            <SidebarNavItem
+              href="/favorites"
+              label="Favorites"
+              icon={Star}
+              active={pathname === "/favorites"}
+              collapsed={collapsed}
+              badge={favoritesCount}
+              onClick={onCloseMobile}
+            />
+          </nav>
+
+          {/* Pinned Folders (Flat list only — deep tree lives in Content Pane) */}
+          {!collapsed && (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between px-2.5">
+                <span className="text-[11px] font-medium tracking-wider text-muted-foreground/80">
+                  Pinned Folders
+                </span>
+              </div>
+
+              {pinnedFolders.length === 0 ? (
+                <p className="px-2.5 py-1 text-xs text-muted-foreground/70">
+                  Star folders to pin them here.
+                </p>
+              ) : (
+                <div className="space-y-0.5">
+                  {pinnedFolders.map((folder) => {
+                    const isActive = activeFolderId === folder.id;
+                    return (
+                      <Link
+                        key={folder.id}
+                        href={`/files/${folder.id}`}
+                        onClick={onCloseMobile}
+                        className={cn(
+                          "flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition-colors",
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                            : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
+                        )}
+                      >
+                        <Folder className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+                        <span className="truncate">{folder.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
-      </div>
 
-      <div className="border-t border-border p-3 space-y-2">
-        <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="flex items-center gap-1.5 text-xs font-medium">
-              <HardDrive className="h-3.5 w-3.5 text-muted-foreground" />
-              Storage
-            </span>
-            <span className="font-mono text-foreground font-medium">{formatBytes(totalBytes)}</span>
-          </div>
-          <div className="mt-1 text-[11px] text-muted-foreground">
-            {metadata.folders.length} folders &middot; {metadata.files.length} files
-          </div>
+        {/* Footer: Storage & Lock */}
+        <div className={cn("p-3 space-y-2 border-t border-sidebar-border", collapsed && "px-2")}>
+          {!collapsed && (
+            <div className="rounded-xl border border-border bg-card/80 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+                  <HardDrive className="h-3.5 w-3.5" />
+                  Storage
+                </span>
+                <span className="font-mono text-xs font-medium tabular-nums text-foreground">
+                  {formatBytes(totalBytes)}
+                </span>
+              </div>
+              <Progress value={Math.max(storagePercent, totalBytes > 0 ? 3 : 0)} />
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>{metadata.folders.length} folders</span>
+                <span>{metadata.files.length} files</span>
+              </div>
+            </div>
+          )}
+
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="mx-auto flex h-9 w-9 text-muted-foreground hover:text-foreground"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  aria-label="Lock and sign out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Lock &amp; Sign Out</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 w-full justify-start gap-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={handleLogout}
+              disabled={loggingOut}
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              {loggingOut ? "Locking vault..." : "Lock & Sign Out"}
+            </Button>
+          )}
         </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-full justify-start text-xs text-muted-foreground hover:text-foreground"
-          onClick={handleLogout}
-          disabled={loggingOut}
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          {loggingOut ? "Locking vault..." : "Lock & Sign Out"}
-        </Button>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r border-border lg:block">{sidebarBody}</aside>
+      <aside
+        className={cn(
+          "hidden shrink-0 transition-[width] duration-200 ease-out lg:block",
+          sidebarCollapsed ? "w-[60px]" : "w-[236px]"
+        )}
+      >
+        {renderSidebarContent(sidebarCollapsed)}
+      </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={onCloseMobile} />
-          <aside className="relative z-10 w-72 max-w-[85vw] border-r border-border bg-background">
-            {sidebarBody}
-          </aside>
-        </div>
-      )}
-
-      <RenameItemDialog target={renameTarget} onClose={() => setRenameTarget(null)} />
-      <CopyItemDialog target={copyTarget} onClose={() => setCopyTarget(null)} />
-      <DeleteConfirmDialog
-        target={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onDeleted={() => {
-          if (deleteTarget?.kind === "folder" && activeFolderId === deleteTarget.item.id) {
-            const parent = deleteTarget.item.parentId;
-            router.push(parent ? `/files/${parent}` : "/files");
-          }
-        }}
-      />
+      <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+        <SheetContent side="left" className="p-0">
+          <SheetTitle className="sr-only">Workspace navigation</SheetTitle>
+          {renderSidebarContent(false, () => setMobileSidebarOpen(false))}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

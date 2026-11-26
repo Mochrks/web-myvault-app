@@ -6,17 +6,9 @@ import remarkGfm from "remark-gfm";
 import { Check, Copy } from "lucide-react";
 import { toast } from "sonner";
 
-function MarkdownCodeBlock({
-  language,
-  code,
-}: {
-  language: string;
-  code: string;
-}) {
+function MarkdownCodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = React.useState(false);
-  const [highlightedHtml, setHighlightedHtml] = React.useState<string | null>(
-    null,
-  );
+  const [highlightedHtml, setHighlightedHtml] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let active = true;
@@ -29,7 +21,7 @@ function MarkdownCodeBlock({
         codeToHtml(code, {
           lang: language,
           theme: "github-dark-default",
-        }),
+        })
       )
       .then((html) => {
         if (active) setHighlightedHtml(html);
@@ -43,8 +35,7 @@ function MarkdownCodeBlock({
     };
   }, [code, language]);
 
-  const renderedHtml =
-    language && code.length <= 50_000 ? highlightedHtml : null;
+  const renderedHtml = language && code.length <= 50_000 ? highlightedHtml : null;
 
   const handleCopy = async () => {
     try {
@@ -58,13 +49,13 @@ function MarkdownCodeBlock({
   };
 
   return (
-    <div className="my-3 overflow-hidden rounded-xl border border-[#232838] bg-[#0d1017]">
-      <div className="flex items-center justify-between border-b border-[#232838] bg-[#131722] px-3.5 py-1.5 text-[11px] text-[#98a2b3]">
+    <div className="my-3 overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between border-b border-border bg-secondary/50 px-3.5 py-1.5 text-[11px] text-muted-foreground">
         <span className="font-mono uppercase">{language || "code"}</span>
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-[#98a2b3] transition-colors hover:bg-[#1d2230] hover:text-[#eef1f7] cursor-pointer"
+          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
         >
           {copied ? (
             <>
@@ -85,7 +76,7 @@ function MarkdownCodeBlock({
           dangerouslySetInnerHTML={{ __html: renderedHtml }}
         />
       ) : (
-        <pre className="overflow-x-auto p-3.5 font-mono text-xs leading-6 text-[#d0d6e2]">
+        <pre className="overflow-x-auto p-3.5 font-mono text-xs leading-6 text-foreground/90">
           <code>{code}</code>
         </pre>
       )}
@@ -108,17 +99,12 @@ export function MarkdownRenderer({ content }: { content: string }) {
             const isBlock = Boolean(match) || rawText.includes("\n");
 
             if (isBlock) {
-              return (
-                <MarkdownCodeBlock
-                  language={match?.[1] ?? "plaintext"}
-                  code={rawText}
-                />
-              );
+              return <MarkdownCodeBlock language={match?.[1] ?? "plaintext"} code={rawText} />;
             }
 
             return (
               <code
-                className="rounded border border-[#232838] bg-[#171b26] px-1.5 py-0.5 font-mono text-[0.84em] text-indigo-300"
+                className="rounded border border-border bg-secondary px-1.5 py-0.5 font-mono text-[0.84em] text-foreground"
                 {...props}
               >
                 {children}

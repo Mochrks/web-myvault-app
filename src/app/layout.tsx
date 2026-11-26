@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,9 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "myvault — Private Personal Vault",
+  title: {
+    default: "myvault",
+    template: "myvault - %s",
+  },
   description:
-    "Encrypted-session personal vault for files, coding notes, source code, and documents.",
+    "Encrypted-session personal vault for files, rich markdown notes, source code, and documents.",
 };
 
 export default function RootLayout({
@@ -32,15 +36,14 @@ export default function RootLayout({
     >
       <body
         suppressHydrationWarning
-        className="min-h-full bg-background font-sans text-foreground selection:bg-secondary selection:text-foreground"
+        className="min-h-full bg-sidebar font-sans text-foreground selection:bg-accent selection:text-foreground"
       >
-        {children}
+        <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
         <Toaster
           theme="dark"
           position="bottom-right"
-          richColors
           toastOptions={{
-            className: "border border-border bg-card text-foreground",
+            className: "border border-border bg-popover text-popover-foreground shadow-xl",
           }}
         />
       </body>

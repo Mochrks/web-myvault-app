@@ -848,4 +848,134 @@ export class VaultService {
 
     return { deletedFile: existing, metadata };
   }
+
+  /**
+   * Collects all files (including recursive descendants of selected folders)
+   * with sanitized, collision-free relative ZIP archive paths.
+   */
+  async collectDownloadEntries(input: {
+    fileIds: string[];
+    folderIds: string[];
+  }): Promise<{
+    entries: Array<{ file: VaultFile; archivePath: string }>;
+    emptyFolderPaths: string[];
+    totalBytes: number;
+  }> {
+    const index = await this.getMetadata();
+    const folderById = new Map(index.folders.map((f) => [f.id, f]));
+    const fileById = new Map(index.files.map((f) => [f.id, f]));
+
+    const childrenFolders = new Map<string | null, VaultFolder[]>();
+    for (const folder of index.folders) {
+      const list = childrenFolders.get(folder.parentId) ?? [];
+      list.push(folder);
+      childrenFolders.set(folder.parentId, list);
+    }
+
+    const filesByFolder = new Map<string | null, VaultFile[]>();
+    for (const file of index.files) {
+      const list = filesByFolder.get(file.folderId) ?? [];
+      list.push(file);
+      filesByFolder.set(file.folderId, list);
+    }
+
+    const sanitizeSegment = (raw: string): string =>
+      raw
+        .replace(/[<>:"/\\|?*\x00-\x1f]/g, "_")
+        .replace(/^\.+/, "_")
+        .trim() || "unnamed";
+
+    const usedPaths = new Set<string>();
+    const allocatePath = (rawPath: string): string => {
+      const normalized = rawPath.replace(/^\/+/, "");
+      const lower = normalized.toLowerCase();
+      if (!usedPaths.has(lower)) {
+        usedPaths.add(lower);
+        return normalized;
+      }
+
+      const lastSlash = normalized.lastIndexOf("/");
+      const dir = lastSlash >= 0 ? normalized.slice(0, lastSlash + 1) : "";
+      const filename = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+      const dotIndex = filename.lastIndexOf(".");
+      const stem = dotIndex > 0 ? filename.slice(0, dotIndex) : filename;
+      const ext = dotIndex > 0 ? filename.slice(dotIndex) : "";
+
+      let counter = 1;
+      while (true) {
+        const candidate = `${dir}${stem} (${counter})${ext}`;
+        if (!usedPaths.has(candidate.toLowerCase())) {
+          usedPaths.add(candidate.toLowerCase());
+          return candidate;
+        }
+        counter += 1;
+      }
+    };
+
+    const entries: Array<{ file: VaultFile; archivePath: string }> = [];
+    const emptyFolderPaths: string[] = [];
+    const includedFileIds = new Set<string>();
+    const visitedFolders = new Set<string>();
+
+    const walkFolder = (folder: VaultFolder, prefix: string) => {
+      if (visitedFolders.has(folder.id)) return;
+      visitedFolders.add(folder.id);
+
+      const safeName = sanitizeSegment(folder.name);
+      const currentPrefix = prefix ? `${prefix}/${safeName}` : safeName;
+
+      const directFiles = filesByFolder.get(folder.id) ?? [];
+      const subFolders = childrenFolders.get(folder.id) ?? [];
+
+      if (directFiles.length === 0 && subFolders.length === 0) {
+        emptyFolderPaths.push(`${currentPrefix}/`);
+        return;
+      }
+
+      for (const file of directFiles) {
+        if (includedFileIds.has(file.id)) continue;
+        includedFileIds.add(file.id);
+        const archivePath = allocatePath(
+          `${currentPrefix}/${sanitizeSegment(file.name)}`
+        );
+        entries.push({ file, archivePath });
+      }
+
+      for (const child of subFolders) {
+        walkFolder(child, currentPrefix);
+      }
+    };
+
+    // Walk selected folders first so files inside them keep their folder hierarchy
+    for (const folderId of input.folderIds) {
+      const folder = folderById.get(folderId);
+      if (!folder) {
+        throw new VaultAppError(
+          "FOLDER_NOT_FOUND",
+          `Folder not found (${folderId}).`,
+          404
+        );
+      }
+      walkFolder(folder, "");
+    }
+
+    // Then include explicitly selected standalone files (deduplicated)
+    for (const fileId of input.fileIds) {
+      if (includedFileIds.has(fileId)) continue;
+      const file = fileById.get(fileId);
+      if (!file) {
+        throw new VaultAppError(
+          "FILE_NOT_FOUND",
+          `File not found (${fileId}).`,
+          404
+        );
+      }
+      includedFileIds.add(file.id);
+      const archivePath = allocatePath(sanitizeSegment(file.name));
+      entries.push({ file, archivePath });
+    }
+
+    const totalBytes = entries.reduce((sum, item) => sum + item.file.size, 0);
+    return { entries, emptyFolderPaths, totalBytes };
+  }
 }
