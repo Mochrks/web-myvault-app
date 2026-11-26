@@ -122,9 +122,7 @@ export function NoteEditorClient({
       setSavedContent(content);
       toast.success(`${docLabel} saved`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : `Failed to save ${docLabel.toLowerCase()}.`
-      );
+      toast.error(err instanceof Error ? err.message : `Failed to save ${docLabel.toLowerCase()}.`);
     } finally {
       setSaving(false);
     }
@@ -241,6 +239,8 @@ export function NoteEditorClient({
                 <button
                   type="button"
                   onClick={() => setMode("rich")}
+                  aria-label="Rich editor mode"
+                  title="Rich editor mode"
                   className={cn(
                     "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer",
                     mode === "rich"
@@ -249,11 +249,13 @@ export function NoteEditorClient({
                   )}
                 >
                   <Sparkles className="h-3 w-3" />
-                  <span>Rich</span>
+                  <span className="hidden sm:inline">Rich</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode("source")}
+                  aria-label="Source mode"
+                  title="Source mode"
                   className={cn(
                     "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors cursor-pointer",
                     mode === "source"
@@ -262,7 +264,7 @@ export function NoteEditorClient({
                   )}
                 >
                   <Code2 className="h-3 w-3" />
-                  <span>Source</span>
+                  <span className="hidden sm:inline">Source</span>
                 </button>
                 <button
                   type="button"

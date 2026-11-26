@@ -198,7 +198,7 @@ export function EditorToolbar({ editor, onUploadImage }: EditorToolbarProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 border-b border-border bg-card/70 px-3 py-1.5 backdrop-blur-sm">
+    <div className="flex flex-nowrap items-center gap-0.5 overflow-x-auto border-b border-border bg-card/70 px-3 py-1.5 backdrop-blur-sm sm:flex-wrap sm:overflow-visible">
       {/* History */}
       <ToolbarButton
         label="Undo (Ctrl+Z)"

@@ -39,9 +39,9 @@ export function BulkActionBar({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 18, scale: 0.96 }}
           transition={{ type: "spring", stiffness: 420, damping: 32 }}
-          className="fixed bottom-5 left-1/2 z-40 w-[calc(100%-2rem)] max-w-fit -translate-x-1/2"
+          className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-1.5rem)] max-w-fit -translate-x-1/2 sm:bottom-5"
         >
-          <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-border bg-popover/95 px-2.5 py-2 shadow-2xl backdrop-blur-md">
+          <div className="flex items-center gap-1.5 overflow-x-auto rounded-2xl border border-border bg-popover/95 px-2.5 py-2 shadow-2xl backdrop-blur-md">
             <div className="flex items-center gap-2 pl-1.5 pr-1">
               <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-primary px-1.5 font-mono text-[11px] font-semibold tabular-nums text-primary-foreground">
                 {selectedCount}

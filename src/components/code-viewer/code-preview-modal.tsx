@@ -132,7 +132,7 @@ function FilePreviewModalContent({ file, onClose }: { file: VaultFile; onClose: 
 
   return (
     <>
-      <DialogHeader className="flex-row flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-5 py-3.5 pr-12">
+      <DialogHeader className="flex-col items-start justify-between gap-3 border-b border-border bg-card px-4 py-3.5 pr-12 sm:flex-row sm:items-center sm:px-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background">
             <VaultEntryIcon type="file" kind={file.kind} className="h-4 w-4" />

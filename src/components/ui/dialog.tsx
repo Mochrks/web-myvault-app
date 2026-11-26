@@ -22,7 +22,7 @@ export function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl focus:outline-none",
+          "fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl focus:outline-none sm:p-6",
           className
         )}
         {...props}
@@ -31,7 +31,7 @@ export function DialogContent({
         {showClose && (
           <DialogPrimitive.Close
             aria-label="Close dialog"
-            className="absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
+            className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground cursor-pointer"
           >
             <X className="h-4 w-4" />
           </DialogPrimitive.Close>
@@ -41,11 +41,8 @@ export function DialogContent({
   );
 }
 
-export function DialogHeader({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-1.5 pr-6", className)} {...props} />;
+export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("flex flex-col gap-1.5 pr-8", className)} {...props} />;
 }
 
 export function DialogTitle({
@@ -54,7 +51,10 @@ export function DialogTitle({
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn("text-base font-semibold tracking-tight text-foreground", className)}
+      className={cn(
+        "text-base font-semibold leading-snug tracking-tight text-foreground",
+        className
+      )}
       {...props}
     />
   );
@@ -72,13 +72,13 @@ export function DialogDescription({
   );
 }
 
-export function DialogFooter({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        "mt-5 grid grid-cols-2 gap-2.5 sm:flex sm:flex-row sm:items-center sm:justify-end [&>button]:h-9 [&>button]:w-full sm:[&>button]:w-auto sm:[&>button]:min-w-[104px]",
+        className
+      )}
       {...props}
     />
   );

@@ -99,7 +99,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
                 autoComplete="current-password"
                 autoFocus
                 disabled={loading || redirecting}
-                className="pr-10"
+                className="h-10 pr-10"
               />
               <button
                 type="button"
@@ -121,7 +121,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={loading || redirecting}>
+          <Button type="submit" size="lg" className="w-full" disabled={loading || redirecting}>
             {redirecting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

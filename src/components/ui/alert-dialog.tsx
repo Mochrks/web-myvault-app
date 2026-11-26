@@ -16,7 +16,7 @@ export function AlertDialogContent({
       <AlertDialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs" />
       <AlertDialogPrimitive.Content
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-popover p-6 text-popover-foreground shadow-2xl focus:outline-none",
+          "fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl focus:outline-none sm:p-6",
           className
         )}
         {...props}
@@ -38,7 +38,7 @@ export function AlertDialogTitle({
 }: React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>) {
   return (
     <AlertDialogPrimitive.Title
-      className={cn("text-base font-semibold tracking-tight text-foreground", className)}
+      className={cn("text-base font-semibold leading-snug tracking-tight text-foreground", className)}
       {...props}
     />
   );
@@ -62,7 +62,10 @@ export function AlertDialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end", className)}
+      className={cn(
+        "mt-5 grid grid-cols-2 gap-2.5 sm:flex sm:flex-row sm:items-center sm:justify-end [&>button]:h-9 [&>button]:w-full sm:[&>button]:w-auto sm:[&>button]:min-w-[104px]",
+        className
+      )}
       {...props}
     />
   );
@@ -75,7 +78,7 @@ export function AlertDialogCancel({
   return (
     <AlertDialogPrimitive.Cancel
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-lg border border-border bg-secondary px-3.5 text-sm font-medium text-secondary-foreground transition-colors hover:bg-accent cursor-pointer disabled:opacity-50",
+        "inline-flex h-9 items-center justify-center rounded-lg border border-border bg-card px-4 text-sm font-medium leading-none text-foreground transition-colors hover:bg-accent cursor-pointer disabled:opacity-50",
         className
       )}
       {...props}
@@ -90,7 +93,7 @@ export function AlertDialogAction({
   return (
     <AlertDialogPrimitive.Action
       className={cn(
-        "inline-flex h-9 items-center justify-center rounded-lg bg-destructive px-3.5 text-sm font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 cursor-pointer disabled:opacity-50",
+        "inline-flex h-9 items-center justify-center rounded-lg border border-transparent bg-destructive px-4 text-sm font-medium leading-none text-destructive-foreground transition-colors hover:bg-destructive/90 cursor-pointer disabled:opacity-50",
         className
       )}
       {...props}

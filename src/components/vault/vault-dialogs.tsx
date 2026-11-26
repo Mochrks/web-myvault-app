@@ -88,9 +88,7 @@ function uploadViaServerWithProgress(
         if (xhr.status >= 200 && xhr.status < 300 && parsed.success) {
           resolve(parsed.data);
         } else {
-          reject(
-            new Error(parsed?.error?.message || `Upload failed (${xhr.status})`)
-          );
+          reject(new Error(parsed?.error?.message || `Upload failed (${xhr.status})`));
         }
       } catch {
         reject(new Error(`Unexpected response (${xhr.status})`));
@@ -114,12 +112,7 @@ export function VaultGlobalDialogs() {
 }
 
 function CreateFolderDialog() {
-  const {
-    newFolderParentId,
-    closeNewFolderDialog,
-    setMetadata,
-    getFolderPathLabel,
-  } = useVault();
+  const { newFolderParentId, closeNewFolderDialog, setMetadata, getFolderPathLabel } = useVault();
   const [name, setName] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -183,12 +176,7 @@ function CreateFolderDialog() {
           />
           {error && <p className="text-xs text-red-400">{error}</p>}
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={submitting}
-            >
+            <Button type="button" variant="outline" onClick={handleClose} disabled={submitting}>
               Cancel
             </Button>
             <Button type="submit" disabled={submitting}>
@@ -209,8 +197,7 @@ function CreateFolderDialog() {
 }
 
 function CreateNoteDialog() {
-  const { newNoteFolderId, newNoteDefaultFormat, closeNewNoteDialog } =
-    useVault();
+  const { newNoteFolderId, newNoteDefaultFormat, closeNewNoteDialog } = useVault();
   const open = newNoteFolderId !== undefined;
 
   return (
@@ -256,9 +243,7 @@ function CreateNoteDialogContent({
 
     const lower = raw.toLowerCase();
     const finalName =
-      lower.endsWith(".md") ||
-      lower.endsWith(".markdown") ||
-      lower.endsWith(".txt")
+      lower.endsWith(".md") || lower.endsWith(".markdown") || lower.endsWith(".txt")
         ? raw
         : `${raw}.${format}`;
 
@@ -285,11 +270,7 @@ function CreateNoteDialogContent({
       onClose();
       router.push(`/notes/${res.file.id}`);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : `Failed to create ${label.toLowerCase()}.`
-      );
+      setError(err instanceof Error ? err.message : `Failed to create ${label.toLowerCase()}.`);
     } finally {
       setSubmitting(false);
     }
@@ -302,12 +283,10 @@ function CreateNoteDialogContent({
           <NotebookPen className="h-4 w-4 text-muted-foreground" />
           New {label}
         </DialogTitle>
-        <DialogDescription>
-          Location: {getFolderPathLabel(folderId)}
-        </DialogDescription>
+        <DialogDescription>Location: {getFolderPathLabel(folderId)}</DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
             placeholder={isMd ? "e.g. system-design" : "e.g. quick-notes"}
             value={name}
@@ -316,11 +295,8 @@ function CreateNoteDialogContent({
             disabled={submitting}
             className="flex-1"
           />
-          <Select
-            value={format}
-            onValueChange={(v) => setFormat(v as "md" | "txt")}
-          >
-            <SelectTrigger className="w-36">
+          <Select value={format} onValueChange={(v) => setFormat(v as "md" | "txt")}>
+            <SelectTrigger className="w-full sm:w-40 sm:shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -331,12 +307,7 @@ function CreateNoteDialogContent({
         </div>
         {error && <p className="text-xs text-red-400">{error}</p>}
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={submitting}
-          >
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
           <Button type="submit" disabled={submitting}>
@@ -385,10 +356,7 @@ function UploadFilesDialog() {
       file,
       progress: 0,
       status: file.size > maxBytes ? "error" : "pending",
-      error:
-        file.size > maxBytes
-          ? `Exceeds ${maxUploadSizeMb} MB limit`
-          : undefined,
+      error: file.size > maxBytes ? `Exceeds ${maxUploadSizeMb} MB limit` : undefined,
     }));
     setItems((prev) => [...prev, ...incoming]);
   };
@@ -402,9 +370,7 @@ function UploadFilesDialog() {
 
     for (const item of pending) {
       setItems((prev) =>
-        prev.map((x) =>
-          x.id === item.id ? { ...x, status: "uploading", progress: 5 } : x
-        )
+        prev.map((x) => (x.id === item.id ? { ...x, status: "uploading", progress: 5 } : x))
       );
 
       try {
@@ -414,11 +380,7 @@ function UploadFilesDialog() {
             item.file,
             uploadTargetFolderId ?? null,
             (pct) => {
-              setItems((prev) =>
-                prev.map((x) =>
-                  x.id === item.id ? { ...x, progress: pct } : x
-                )
-              );
+              setItems((prev) => prev.map((x) => (x.id === item.id ? { ...x, progress: pct } : x)));
             }
           );
           latestMeta = result.metadata;
@@ -438,9 +400,7 @@ function UploadFilesDialog() {
             onUploadProgress: (evt) => {
               setItems((prev) =>
                 prev.map((x) =>
-                  x.id === item.id
-                    ? { ...x, progress: Math.round(evt.percentage) }
-                    : x
+                  x.id === item.id ? { ...x, progress: Math.round(evt.percentage) } : x
                 )
               );
             },
@@ -464,25 +424,19 @@ function UploadFilesDialog() {
         setMetadata(latestMeta);
         successCount += 1;
         setItems((prev) =>
-          prev.map((x) =>
-            x.id === item.id ? { ...x, status: "done", progress: 100 } : x
-          )
+          prev.map((x) => (x.id === item.id ? { ...x, status: "done", progress: 100 } : x))
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : "Upload failed.";
         setItems((prev) =>
-          prev.map((x) =>
-            x.id === item.id ? { ...x, status: "error", error: message } : x
-          )
+          prev.map((x) => (x.id === item.id ? { ...x, status: "error", error: message } : x))
         );
       }
     }
 
     setUploading(false);
     if (successCount > 0) {
-      toast.success(
-        `Uploaded ${successCount} file${successCount > 1 ? "s" : ""}`
-      );
+      toast.success(`Uploaded ${successCount} file${successCount > 1 ? "s" : ""}`);
     }
   };
 
@@ -502,8 +456,8 @@ function UploadFilesDialog() {
             Upload Files
           </DialogTitle>
           <DialogDescription>
-            Target: {getFolderPathLabel(uploadTargetFolderId ?? null)} · Max{" "}
-            {maxUploadSizeMb} MB per file
+            Target: {getFolderPathLabel(uploadTargetFolderId ?? null)} · Max {maxUploadSizeMb} MB
+            per file
           </DialogDescription>
         </DialogHeader>
 
@@ -529,12 +483,9 @@ function UploadFilesDialog() {
           <div className="mb-2.5 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card">
             <FileUp className="h-5 w-5 text-foreground" />
           </div>
-          <p className="text-sm font-medium text-foreground">
-            Drop files here or click to browse
-          </p>
+          <p className="text-sm font-medium text-foreground">Drop files here or click to browse</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Code, notes, PDFs, Office docs, spreadsheets, archives, images,
-            binaries
+            Code, notes, PDFs, Office docs, spreadsheets, archives, images, binaries
           </p>
           <input
             ref={inputRef}
@@ -556,9 +507,7 @@ function UploadFilesDialog() {
                 className="rounded-lg border border-border bg-background px-3 py-2"
               >
                 <div className="flex items-center justify-between gap-2 text-xs">
-                  <span className="truncate font-medium text-foreground">
-                    {item.file.name}
-                  </span>
+                  <span className="truncate font-medium text-foreground">{item.file.name}</span>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="font-mono text-muted-foreground">
                       {formatBytes(item.file.size)}
@@ -566,9 +515,7 @@ function UploadFilesDialog() {
                     {item.status === "done" && (
                       <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                     )}
-                    {item.status === "error" && (
-                      <XCircle className="h-4 w-4 text-red-400" />
-                    )}
+                    {item.status === "error" && <XCircle className="h-4 w-4 text-red-400" />}
                     {item.status === "uploading" && (
                       <Loader2 className="h-4 w-4 animate-spin text-foreground" />
                     )}
@@ -577,24 +524,15 @@ function UploadFilesDialog() {
                 {(item.status === "uploading" || item.status === "done") && (
                   <Progress value={item.progress} className="mt-2 h-1" />
                 )}
-                {item.error && (
-                  <p className="mt-1 text-[11px] text-red-400">{item.error}</p>
-                )}
+                {item.error && <p className="mt-1 text-[11px] text-red-400">{item.error}</p>}
               </div>
             ))}
           </div>
         )}
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={uploading}
-          >
-            {items.some((i) => i.status === "done") && pendingCount === 0
-              ? "Done"
-              : "Cancel"}
+          <Button type="button" variant="outline" onClick={handleClose} disabled={uploading}>
+            {items.some((i) => i.status === "done") && pendingCount === 0 ? "Done" : "Cancel"}
           </Button>
           <Button
             type="button"
@@ -645,27 +583,19 @@ function GlobalSearchDialog() {
         <CommandEmpty>No matching files, folders, or commands.</CommandEmpty>
 
         <CommandGroup heading="Quick Actions">
-          <CommandItem
-            onSelect={() => runAction(() => openNewNoteDialog(null, "md"))}
-          >
+          <CommandItem onSelect={() => runAction(() => openNewNoteDialog(null, "md"))}>
             <NotebookPen className="h-4 w-4 text-muted-foreground" />
             <span>New Markdown (.md)</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runAction(() => openNewNoteDialog(null, "txt"))}
-          >
+          <CommandItem onSelect={() => runAction(() => openNewNoteDialog(null, "txt"))}>
             <NotebookPen className="h-4 w-4 text-muted-foreground" />
             <span>New Note (.txt)</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runAction(() => openUploadDialog(null))}
-          >
+          <CommandItem onSelect={() => runAction(() => openUploadDialog(null))}>
             <Upload className="h-4 w-4 text-muted-foreground" />
             <span>Upload Files</span>
           </CommandItem>
-          <CommandItem
-            onSelect={() => runAction(() => openNewFolderDialog(null))}
-          >
+          <CommandItem onSelect={() => runAction(() => openNewFolderDialog(null))}>
             <FolderPlus className="h-4 w-4 text-muted-foreground" />
             <span>New Folder</span>
           </CommandItem>
@@ -697,9 +627,7 @@ function GlobalSearchDialog() {
                 <CommandItem
                   key={folder.id}
                   value={`folder ${folder.name} ${getFolderPathLabel(folder.parentId)}`}
-                  onSelect={() =>
-                    runAction(() => router.push(`/files/${folder.id}`))
-                  }
+                  onSelect={() => runAction(() => router.push(`/files/${folder.id}`))}
                 >
                   <VaultEntryIcon type="folder" />
                   <span className="truncate font-medium">{folder.name}</span>
@@ -729,9 +657,7 @@ function GlobalSearchDialog() {
                       ) {
                         router.push(`/notes/${file.id}`);
                       } else {
-                        router.push(
-                          file.folderId ? `/files/${file.folderId}` : "/files"
-                        );
+                        router.push(file.folderId ? `/files/${file.folderId}` : "/files");
                         setPreviewFile(file);
                       }
                     })

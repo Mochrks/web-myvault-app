@@ -16,14 +16,14 @@ export function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary/60 focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-input bg-background px-3 py-1.5 text-sm text-foreground shadow-xs transition-colors hover:bg-card focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 [&>span]:truncate",
         className
       )}
       {...props}
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );

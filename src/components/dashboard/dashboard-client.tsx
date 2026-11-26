@@ -178,7 +178,7 @@ export function DashboardClient() {
       <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
         {/* 4 KPI Cards — Official shadcn/ui dashboard-01 neutral card aesthetic */}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Card className="vault-card-sheen">
+          <Card className="vault-card-sheen flex flex-col justify-between">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
                 <CardDescription>Total Files</CardDescription>
@@ -199,7 +199,7 @@ export function DashboardClient() {
             </CardContent>
           </Card>
 
-          <Card className="vault-card-sheen">
+          <Card className="vault-card-sheen flex flex-col justify-between">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
                 <CardDescription>Folders</CardDescription>
@@ -220,7 +220,7 @@ export function DashboardClient() {
             </CardContent>
           </Card>
 
-          <Card className="vault-card-sheen">
+          <Card className="vault-card-sheen flex flex-col justify-between">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
                 <CardDescription>Markdown &amp; Notes</CardDescription>
@@ -243,7 +243,7 @@ export function DashboardClient() {
             </CardContent>
           </Card>
 
-          <Card className="vault-card-sheen">
+          <Card className="vault-card-sheen flex flex-col justify-between">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between gap-2">
                 <CardDescription>Storage Used</CardDescription>
@@ -342,12 +342,15 @@ export function DashboardClient() {
                       <span className="hidden font-mono tabular-nums md:inline">
                         {formatBytes(file.size)}
                       </span>
-                      <span suppressHydrationWarning className="text-[11px] tabular-nums">
+                      <span
+                        suppressHydrationWarning
+                        className="whitespace-nowrap text-[11px] tabular-nums"
+                      >
                         {formatRelativeDate(file.updatedAt)}
                       </span>
                       <a
                         href={`/api/vault/files/${file.id}/download`}
-                        className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100"
+                        className="rounded-md p-1.5 text-muted-foreground opacity-100 transition-opacity hover:bg-accent hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100"
                         title={`Download ${file.name}`}
                         aria-label={`Download ${file.name}`}
                       >

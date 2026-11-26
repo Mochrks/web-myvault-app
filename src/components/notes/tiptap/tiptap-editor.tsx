@@ -68,9 +68,7 @@ export function TiptapMarkdownEditor({
     const q = slash.query.trim().toLowerCase();
     if (!q) return SLASH_COMMANDS;
     return SLASH_COMMANDS.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.keywords.some((k) => k.includes(q))
+      (item) => item.label.toLowerCase().includes(q) || item.keywords.some((k) => k.includes(q))
     );
   }, [slash.query]);
 
@@ -162,9 +160,7 @@ export function TiptapMarkdownEditor({
       handlePaste: (_view, event) => {
         const files = event.clipboardData?.files;
         if (!files || files.length === 0) return false;
-        const imageFile = Array.from(files).find((f) =>
-          f.type.startsWith("image/")
-        );
+        const imageFile = Array.from(files).find((f) => f.type.startsWith("image/"));
         if (!imageFile || !uploadHandlerRef.current) return false;
         event.preventDefault();
         void uploadHandlerRef.current(imageFile).then((url) => {
@@ -261,11 +257,7 @@ export function TiptapMarkdownEditor({
   const handleSelectSlashItem = (item: SlashCommandItem) => {
     if (!editor) return;
     if (slash.range) {
-      editor
-        .chain()
-        .focus()
-        .deleteRange(slash.range)
-        .run();
+      editor.chain().focus().deleteRange(slash.range).run();
     }
     item.action(editor);
     setSlash((s) => ({ ...s, open: false }));
@@ -276,7 +268,7 @@ export function TiptapMarkdownEditor({
       <EditorToolbar editor={editor} onUploadImage={onUploadImage} />
 
       <div className="relative flex-1 overflow-y-auto">
-        <div className="vault-tiptap mx-auto w-full max-w-3xl px-6 py-8 sm:px-10">
+        <div className="vault-tiptap mx-auto w-full max-w-3xl px-4 py-6 sm:px-10 sm:py-8">
           <EditorBubbleMenu editor={editor} />
           <EditorContent editor={editor} />
         </div>

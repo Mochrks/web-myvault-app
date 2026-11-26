@@ -57,11 +57,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import {
   Select,
   SelectContent,
@@ -70,17 +66,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BulkActionBar } from "@/components/file-manager/bulk-action-bar";
 import { FolderTreePanel } from "@/components/file-manager/folder-tree-panel";
-import {
-  VaultPageHeader,
-  useVaultLayout,
-} from "@/components/layout/vault-header-context";
+import { VaultPageHeader, useVaultLayout } from "@/components/layout/vault-header-context";
 import {
   CopyItemDialog,
   DeleteConfirmDialog,
@@ -93,12 +82,7 @@ import { triggerBulkDownload } from "@/lib/api/bulk-download";
 import { apiRequest } from "@/lib/api/client";
 import { cn } from "@/lib/utils/cn";
 import { formatBytes, formatRelativeDate } from "@/lib/utils/format";
-import type {
-  FileKind,
-  VaultFile,
-  VaultFolder,
-  VaultMetadataIndex,
-} from "@/types/vault";
+import type { FileKind, VaultFile, VaultFolder, VaultMetadataIndex } from "@/types/vault";
 
 type SortKey = "name" | "kind" | "size" | "updatedAt";
 type FilterKind = "all" | "folder" | "markdown" | FileKind;
@@ -143,11 +127,7 @@ function SortIndicator({
   sortDir: "asc" | "desc";
 }) {
   if (sortKey !== column) return null;
-  return sortDir === "asc" ? (
-    <ArrowUp className="h-3 w-3" />
-  ) : (
-    <ArrowDown className="h-3 w-3" />
-  );
+  return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
 }
 
 function SmartBreadcrumb({
@@ -162,10 +142,7 @@ function SmartBreadcrumb({
   const visibleTrail = shouldCollapse ? breadcrumb.slice(-2) : breadcrumb;
 
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="flex min-w-0 items-center gap-1 text-xs sm:text-[13px]"
-    >
+    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1 text-xs sm:text-[13px]">
       <Link
         href="/files"
         className={cn(
@@ -176,7 +153,7 @@ function SmartBreadcrumb({
         )}
       >
         <Home className="h-3.5 w-3.5" />
-        <span>All Files</span>
+        <span className={cn(currentFolderId && "hidden sm:inline")}>All Files</span>
       </Link>
 
       {shouldCollapse && (
@@ -211,7 +188,7 @@ function SmartBreadcrumb({
             <Link
               href={`/files/${folder.id}`}
               className={cn(
-                "max-w-[140px] truncate rounded-md px-1.5 py-1 transition-colors hover:bg-accent sm:max-w-[200px]",
+                "max-w-[96px] truncate rounded-md px-1.5 py-1 transition-colors hover:bg-accent sm:max-w-[200px]",
                 isLast
                   ? "font-medium text-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -237,15 +214,9 @@ export function FileTable({
   const router = useRouter();
   const searchParams = useSearchParams();
   const kindParam = searchParams.get("kind") as FilterKind | null;
-  const initialKind: FilterKind =
-    kindParam && VALID_KINDS.has(kindParam) ? kindParam : "all";
+  const initialKind: FilterKind = kindParam && VALID_KINDS.has(kindParam) ? kindParam : "all";
 
-  const {
-    treePanelOpen,
-    toggleTreePanel,
-    mobileTreeOpen,
-    setMobileTreeOpen,
-  } = useVaultLayout();
+  const { treePanelOpen, toggleTreePanel, mobileTreeOpen, setMobileTreeOpen } = useVaultLayout();
 
   const {
     metadata,
@@ -269,9 +240,7 @@ export function FileTable({
     value: FilterKind;
   } | null>(null);
   const filterKind: FilterKind =
-    kindOverride && kindOverride.base === initialKind
-      ? kindOverride.value
-      : initialKind;
+    kindOverride && kindOverride.base === initialKind ? kindOverride.value : initialKind;
   const setFilterKind = React.useCallback(
     (next: FilterKind) => {
       setKindOverride({ base: initialKind, value: next });
@@ -314,10 +283,7 @@ export function FileTable({
 
   // If ?kind=markdown or ?kind=note is active at root, show matching files across the vault
   const showAllMarkdownAcrossVault =
-    !favoritesOnly &&
-    folderId === null &&
-    kindParam === "markdown" &&
-    filterKind === "markdown";
+    !favoritesOnly && folderId === null && kindParam === "markdown" && filterKind === "markdown";
   const showAllNotesAcrossVault =
     !favoritesOnly && folderId === null && kindParam === "note" && filterKind === "note";
 
@@ -326,9 +292,7 @@ export function FileTable({
       showAllNotesAcrossVault || showAllMarkdownAcrossVault
         ? []
         : metadata.folders
-            .filter((f) =>
-              favoritesOnly ? Boolean(f.isFavorite) : f.parentId === folderId
-            )
+            .filter((f) => (favoritesOnly ? Boolean(f.isFavorite) : f.parentId === folderId))
             .map<RowEntry>((folder) => ({
               key: `folder:${folder.id}`,
               entryType: "folder",
@@ -425,9 +389,7 @@ export function FileTable({
       const target = event.target as HTMLElement | null;
       const inEditable =
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       if (inEditable) return;
 
       if (event.key === "Escape" && selectedKeys.size > 0) {
@@ -457,10 +419,8 @@ export function FileTable({
     return { fileIds, folderIds };
   }, [selectedKeys]);
 
-  const allVisibleSelected =
-    rows.length > 0 && rows.every((r) => selectedKeys.has(r.key));
-  const someVisibleSelected =
-    !allVisibleSelected && rows.some((r) => selectedKeys.has(r.key));
+  const allVisibleSelected = rows.length > 0 && rows.every((r) => selectedKeys.has(r.key));
+  const someVisibleSelected = !allVisibleSelected && rows.some((r) => selectedKeys.has(r.key));
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -519,21 +479,15 @@ export function FileTable({
   const handleToggleFavorite = async (row: RowEntry) => {
     try {
       const endpoint =
-        row.entryType === "folder"
-          ? `/api/vault/folders/${row.id}`
-          : `/api/vault/files/${row.id}`;
+        row.entryType === "folder" ? `/api/vault/folders/${row.id}` : `/api/vault/files/${row.id}`;
       const res = await apiRequest<{ metadata: VaultMetadataIndex }>(endpoint, {
         method: "PATCH",
         body: JSON.stringify({ isFavorite: !row.isFavorite }),
       });
       setMetadata(res.metadata);
-      toast.success(
-        row.isFavorite ? "Removed from favorites" : "Added to favorites"
-      );
+      toast.success(row.isFavorite ? "Removed from favorites" : "Added to favorites");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update favorite."
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to update favorite.");
     }
   };
 
@@ -547,10 +501,9 @@ export function FileTable({
       });
       toast.success(`Downloaded ${res.filename}`, { id: toastId });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to download folder.",
-        { id: toastId }
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to download folder.", {
+        id: toastId,
+      });
     }
   };
 
@@ -580,8 +533,7 @@ export function FileTable({
         toast.success(`Downloaded ${result.filename}`, { id: toastId });
       }
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Bulk download failed.";
+      const msg = err instanceof Error ? err.message : "Bulk download failed.";
       if (toastId) toast.error(msg, { id: toastId });
       else toast.error(msg);
     } finally {
@@ -615,9 +567,7 @@ export function FileTable({
           : `Removed ${selectedRows.length} item(s) from favorites`
       );
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to update favorites."
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to update favorites.");
     } finally {
       setBulkStarring(false);
     }
@@ -642,9 +592,7 @@ export function FileTable({
       setBulkDeleteOpen(false);
       toast.success(`Deleted ${deletedCount} item(s).`);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to delete some items."
-      );
+      toast.error(err instanceof Error ? err.message : "Failed to delete some items.");
       await refreshMetadata();
     } finally {
       setBulkDeleting(false);
@@ -697,18 +645,15 @@ export function FileTable({
               mimeType: file.type || "application/octet-stream",
             }),
           });
-          const reg = await apiRequest<{ metadata: VaultMetadataIndex }>(
-            "/api/vault/files",
-            {
-              method: "POST",
-              body: JSON.stringify({
-                name: file.name,
-                folderId,
-                objectKey: uploadedBlob.pathname,
-                mimeType: file.type || uploadedBlob.contentType,
-              }),
-            }
-          );
+          const reg = await apiRequest<{ metadata: VaultMetadataIndex }>("/api/vault/files", {
+            method: "POST",
+            body: JSON.stringify({
+              name: file.name,
+              folderId,
+              objectKey: uploadedBlob.pathname,
+              mimeType: file.type || uploadedBlob.contentType,
+            }),
+          });
           latestMeta = reg.metadata;
         }
         uploaded += 1;
@@ -719,10 +664,7 @@ export function FileTable({
 
     if (latestMeta) setMetadata(latestMeta);
     if (uploaded > 0 && failed === 0) {
-      toast.success(
-        `Uploaded ${uploaded} file${uploaded > 1 ? "s" : ""}`,
-        { id: toastId }
-      );
+      toast.success(`Uploaded ${uploaded} file${uploaded > 1 ? "s" : ""}`, { id: toastId });
     } else if (uploaded > 0 && failed > 0) {
       toast.warning(`Uploaded ${uploaded}, failed ${failed} file(s)`, {
         id: toastId,
@@ -735,9 +677,7 @@ export function FileTable({
   if (folderId && currentFolder === undefined) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <h1 className="text-lg font-semibold text-foreground">
-          Folder not found
-        </h1>
+        <h1 className="text-lg font-semibold text-foreground">Folder not found</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           This folder may have been deleted or moved.
         </p>
@@ -753,9 +693,7 @@ export function FileTable({
     MenuItem: typeof DropdownMenuItem,
     MenuSep: typeof DropdownMenuSeparator
   ) => {
-    const isMd =
-      row.file &&
-      (row.file.extension === "md" || row.file.extension === "markdown");
+    const isMd = row.file && (row.file.extension === "md" || row.file.extension === "markdown");
     const isTxt = row.file && row.file.extension === "txt";
 
     return (
@@ -799,9 +737,7 @@ export function FileTable({
         )}
         <MenuSep />
         <MenuItem onSelect={() => handleToggleFavorite(row)}>
-          <Star
-            className={cn("h-3.5 w-3.5", row.isFavorite && "fill-current")}
-          />
+          <Star className={cn("h-3.5 w-3.5", row.isFavorite && "fill-current")} />
           {row.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
         </MenuItem>
         <MenuItem
@@ -878,9 +814,7 @@ export function FileTable({
           <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-card">
             <Upload className="h-5 w-5 text-foreground" />
           </div>
-          <p className="mt-3 text-sm font-medium text-foreground">
-            Drop files to upload here
-          </p>
+          <p className="mt-3 text-sm font-medium text-foreground">Drop files to upload here</p>
           <p className="mt-1 text-xs text-muted-foreground">
             Target: {currentFolder ? currentFolder.name : "All Files (Root)"}
           </p>
@@ -914,8 +848,8 @@ export function FileTable({
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 sm:w-56 sm:flex-none">
+          <div className="grid grid-cols-[1fr_auto] items-center gap-2 sm:flex sm:flex-wrap sm:items-center">
+            <div className="relative col-span-2 sm:col-span-1 sm:w-56">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={filterQuery}
@@ -935,11 +869,8 @@ export function FileTable({
               )}
             </div>
 
-            <Select
-              value={filterKind}
-              onValueChange={(v) => setFilterKind(v as FilterKind)}
-            >
-              <SelectTrigger className="h-8 w-36 text-xs">
+            <Select value={filterKind} onValueChange={(v) => setFilterKind(v as FilterKind)}>
+              <SelectTrigger className="h-8 w-full bg-card text-xs sm:w-40">
                 <SelectValue placeholder="All types" />
               </SelectTrigger>
               <SelectContent>
@@ -1021,11 +952,7 @@ export function FileTable({
                   <NotebookPen className="h-3.5 w-3.5" />
                   New Note
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => openUploadDialog(folderId)}
-                >
+                <Button type="button" size="sm" onClick={() => openUploadDialog(folderId)}>
                   <Upload className="h-3.5 w-3.5" />
                   Upload Files
                 </Button>
@@ -1034,7 +961,7 @@ export function FileTable({
           </div>
         ) : viewMode === "grid" ? (
           /* Grid View */
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
             {rows.map((row, idx) => {
               const isSelected = selectedKeys.has(row.key);
               return (
@@ -1091,11 +1018,7 @@ export function FileTable({
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                              {renderRowMenuItems(
-                                row,
-                                DropdownMenuItem,
-                                DropdownMenuSeparator
-                              )}
+                              {renderRowMenuItems(row, DropdownMenuItem, DropdownMenuSeparator)}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1121,10 +1044,7 @@ export function FileTable({
                             {row.name}
                           </p>
                           <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
-                            <Badge
-                              variant="secondary"
-                              className="font-mono text-[10px]"
-                            >
+                            <Badge variant="secondary" className="font-mono text-[10px]">
                               {row.kindLabel}
                             </Badge>
                             {row.entryType === "file" && (
@@ -1166,11 +1086,7 @@ export function FileTable({
                     <th className="w-10 px-3.5 py-2.5">
                       <Checkbox
                         checked={
-                          allVisibleSelected
-                            ? true
-                            : someVisibleSelected
-                              ? "indeterminate"
-                              : false
+                          allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false
                         }
                         onCheckedChange={toggleSelectAll}
                         aria-label="Select all items"
@@ -1183,11 +1099,7 @@ export function FileTable({
                         className="inline-flex items-center gap-1 font-medium hover:text-foreground cursor-pointer"
                       >
                         Name
-                        <SortIndicator
-                          column="name"
-                          sortKey={sortKey}
-                          sortDir={sortDir}
-                        />
+                        <SortIndicator column="name" sortKey={sortKey} sortDir={sortDir} />
                       </button>
                     </th>
                     <th className="hidden px-3 py-2.5 sm:table-cell">
@@ -1197,11 +1109,7 @@ export function FileTable({
                         className="inline-flex items-center gap-1 font-medium hover:text-foreground cursor-pointer"
                       >
                         Type
-                        <SortIndicator
-                          column="kind"
-                          sortKey={sortKey}
-                          sortDir={sortDir}
-                        />
+                        <SortIndicator column="kind" sortKey={sortKey} sortDir={sortDir} />
                       </button>
                     </th>
                     <th className="hidden px-3 py-2.5 md:table-cell">
@@ -1211,11 +1119,7 @@ export function FileTable({
                         className="inline-flex items-center gap-1 font-medium hover:text-foreground cursor-pointer"
                       >
                         Size
-                        <SortIndicator
-                          column="size"
-                          sortKey={sortKey}
-                          sortDir={sortDir}
-                        />
+                        <SortIndicator column="size" sortKey={sortKey} sortDir={sortDir} />
                       </button>
                     </th>
                     <th className="hidden px-3 py-2.5 lg:table-cell">
@@ -1225,16 +1129,10 @@ export function FileTable({
                         className="inline-flex items-center gap-1 font-medium hover:text-foreground cursor-pointer"
                       >
                         Modified
-                        <SortIndicator
-                          column="updatedAt"
-                          sortKey={sortKey}
-                          sortDir={sortDir}
-                        />
+                        <SortIndicator column="updatedAt" sortKey={sortKey} sortDir={sortDir} />
                       </button>
                     </th>
-                    <th className="w-20 px-3.5 py-2.5 text-right font-medium">
-                      Actions
-                    </th>
+                    <th className="w-20 px-3.5 py-2.5 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/70">
@@ -1283,17 +1181,12 @@ export function FileTable({
                               </button>
                             </td>
                             <td className="hidden px-3 py-2.5 sm:table-cell">
-                              <Badge
-                                variant="secondary"
-                                className="font-mono text-[10px]"
-                              >
+                              <Badge variant="secondary" className="font-mono text-[10px]">
                                 {row.kindLabel}
                               </Badge>
                             </td>
                             <td className="hidden px-3 py-2.5 font-mono text-xs tabular-nums text-muted-foreground md:table-cell">
-                              {row.entryType === "folder"
-                                ? "—"
-                                : formatBytes(row.size)}
+                              {row.entryType === "folder" ? "—" : formatBytes(row.size)}
                             </td>
                             <td
                               suppressHydrationWarning
@@ -1317,8 +1210,7 @@ export function FileTable({
                                   <Star
                                     className={cn(
                                       "h-3.5 w-3.5",
-                                      row.isFavorite &&
-                                        "fill-current text-foreground"
+                                      row.isFavorite && "fill-current text-foreground"
                                     )}
                                   />
                                 </Button>
@@ -1333,10 +1225,7 @@ export function FileTable({
                                       <MoreHorizontal className="h-3.5 w-3.5" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="end"
-                                    className="w-48"
-                                  >
+                                  <DropdownMenuContent align="end" className="w-48">
                                     {renderRowMenuItems(
                                       row,
                                       DropdownMenuItem,
@@ -1408,14 +1297,9 @@ export function FileTable({
             )}
 
             {favoritesOnly ? (
-              <span className="truncate text-sm font-medium text-foreground">
-                Favorites
-              </span>
+              <span className="truncate text-sm font-medium text-foreground">Favorites</span>
             ) : (
-              <SmartBreadcrumb
-                breadcrumb={breadcrumb}
-                currentFolderId={folderId}
-              />
+              <SmartBreadcrumb breadcrumb={breadcrumb} currentFolderId={folderId} />
             )}
           </div>
         }
@@ -1445,9 +1329,7 @@ export function FileTable({
                   disabled={isRefreshing}
                   aria-label="Refresh vault"
                 >
-                  <RefreshCw
-                    className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")}
-                  />
+                  <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">Refresh vault</TooltipContent>
@@ -1466,21 +1348,15 @@ export function FileTable({
                     <Upload className="h-3.5 w-3.5" />
                     Upload Files
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => openNewNoteDialog(folderId, "md")}
-                  >
+                  <DropdownMenuItem onSelect={() => openNewNoteDialog(folderId, "md")}>
                     <NotebookPen className="h-3.5 w-3.5" />
                     New Markdown (.md)
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => openNewNoteDialog(folderId, "txt")}
-                  >
+                  <DropdownMenuItem onSelect={() => openNewNoteDialog(folderId, "txt")}>
                     <FileText className="h-3.5 w-3.5" />
                     New Note (.txt)
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => openNewFolderDialog(folderId)}
-                  >
+                  <DropdownMenuItem onSelect={() => openNewFolderDialog(folderId)}>
                     <FolderPlus className="h-3.5 w-3.5" />
                     New Folder
                   </DropdownMenuItem>
@@ -1506,10 +1382,7 @@ export function FileTable({
                   minSize="16%"
                   maxSize="38%"
                 >
-                  <FolderTreePanel
-                    activeFolderId={folderId}
-                    onClose={toggleTreePanel}
-                  />
+                  <FolderTreePanel activeFolderId={folderId} onClose={toggleTreePanel} />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 <ResizablePanel id="vault-file-explorer" minSize="55%">
@@ -1541,8 +1414,7 @@ export function FileTable({
       <BulkActionBar
         selectedCount={selectedKeys.size}
         isSingleFileOnly={
-          selectedSplit.fileIds.length === 1 &&
-          selectedSplit.folderIds.length === 0
+          selectedSplit.fileIds.length === 1 && selectedSplit.folderIds.length === 0
         }
         allSelected={allVisibleSelected}
         downloading={bulkDownloading}
@@ -1554,18 +1426,9 @@ export function FileTable({
         onDelete={() => setBulkDeleteOpen(true)}
       />
 
-      <RenameItemDialog
-        target={renameTarget}
-        onClose={() => setRenameTarget(null)}
-      />
-      <CopyItemDialog
-        target={copyTarget}
-        onClose={() => setCopyTarget(null)}
-      />
-      <DeleteConfirmDialog
-        target={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-      />
+      <RenameItemDialog target={renameTarget} onClose={() => setRenameTarget(null)} />
+      <CopyItemDialog target={copyTarget} onClose={() => setCopyTarget(null)} />
+      <DeleteConfirmDialog target={deleteTarget} onClose={() => setDeleteTarget(null)} />
 
       <AlertDialog
         open={bulkDeleteOpen}
@@ -1578,16 +1441,13 @@ export function FileTable({
               {selectedKeys.size === 1 ? "" : "s"}?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the selected files and folders (including
-              nested subfolders) from your vault. This action cannot be undone.
+              This permanently removes the selected files and folders (including nested subfolders)
+              from your vault. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={bulkDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBulkDelete}
-              disabled={bulkDeleting}
-            >
+            <AlertDialogAction onClick={handleBulkDelete} disabled={bulkDeleting}>
               {bulkDeleting ? "Deleting..." : "Delete Permanently"}
             </AlertDialogAction>
           </AlertDialogFooter>
